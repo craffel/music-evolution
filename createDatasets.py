@@ -57,7 +57,7 @@ def getRandomSubsample( fileList, year, **kwargs ):
     fileList = list( fileList )
     # Matrix allocation
     pitchVectors = np.zeros( (nVectors, 12) )
-    timbreVectors = np.zeros( (nVectors, 12) )
+    timbreVectors = np.zeros( (nVectors, 11) )
     loudnessValues = np.zeros( nVectors )
     # Will trim this later...
     trackIndices = np.zeros( nVectors )
@@ -86,13 +86,14 @@ def getRandomSubsample( fileList, year, **kwargs ):
             continue
         else:
             trackPitchVectors = trackPitchVectors.T
-        trackTimbreVectors = msd.beat_aligned_feats.get_bttimbre( h5 )
-        if trackTimbreVectors is None:
+        # We only want the last 11 timbre values but we don't know if get_bttimbre will fail so store in a temp variable first
+        tempTimbreVectors = msd.beat_aligned_feats.get_bttimbre( h5 )
+        if tempTimbreVectors is None:
             continue
         else:
-            trackTimbreVectors = trackTimbreVectors.T
+            trackTimbreVectors = (tempTimbreVectors.T)[:, 1:]
         # They use the 0th timbre value as the loudness
-        trackLoudnessValues = trackTimbreVectors[:, 0]
+        trackLoudnessValues = tempTimbreVectors[:, 0]
         h5.close()
         # Store values
         nBeats = trackPitchVectors.shape[0]
