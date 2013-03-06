@@ -43,6 +43,32 @@ def getRankFrequency( matrix ):
 
 # <markdowncell>
 
+# This is used to compute the probability of each codeword count.
+
+# <codecell>
+
+def computeDistribution( vector ):
+    """
+    Given a vector, determine the probability of each entry of the vector.
+    
+    Input:
+        vector - vector whose distribution to compute
+    Output:
+        elements - unique elements of the vector
+        distribution - the distribution of the data
+    """
+    vector = np.sort( vector )
+    elements, indices = np.unique( vector, return_index=True )
+    counts = np.diff( np.append( indices, vector.shape[0] ) )
+    counts = counts[counts > 0]
+    indices = np.argsort( counts )[::-1]
+    counts = counts[indices]
+    elements = elements[indices]
+    return elements, counts/(1.0*vector.shape[0])
+    
+
+# <markdowncell>
+
 # Make plots that look like, eg, Fig 2a by using this function with rank-frequency distributions for various years, each multiplied by $10^{year index}$, with different color arguments.
 
 # <codecell>
@@ -59,15 +85,36 @@ def plotRankFrequency( rankFrequency, color ):
 
 # <codecell>
 
-# Test
 if __name__ == "__main__":
-    import createDatasets
-    fileList = createDatasets.getFiles( 'Data', '.npy' )
+    # Get .npy files for pitch vectors
+    import glob
+    fileList = glob.glob('./Data/subset-pitches-*5.npy')
     colors = ['b', 'c', 'g', 'y', 'r', 'm']
+    # Generate figure 2a
     plt.figure( figsize = (8, 16) )
     for n, filename in enumerate( fileList ):
         pitchVectors = np.load( filename )
+        # Get rank frequency, etc. and plot it (with shifting)
         rankFrequency, rankCounts, sortedMatrix = getRankFrequency( pitchVectors )
         plotRankFrequency( rankFrequency*(10**n), colors[n] )
     plt.legend( fileList )
+
+# <codecell>
+
+pitchVectors = np.load( './Data/subset-pitches-2005-lots.npy' )
+print pitchVectors.shape
+# Get rank frequency, etc. and plot it (with shifting)
+plt.figure()
+rankFrequency, rankCounts, sortedMatrix = getRankFrequency( pitchVectors )
+plotRankFrequency( rankFrequency, 'b' )
+plt.figure()
+rankCounts = np.sort( rankCounts )[::-1]
+counts, probabilities = computeDistribution( rankCounts )
+plt.loglog( counts, probabilities, '.' )
+plt.axis( [1, 1e8, 1e-4, 1e-1] )
+
+# <codecell>
+
+import glob
+glob.glob('./data/subset-pitches-*.npy')
 
