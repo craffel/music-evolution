@@ -94,7 +94,7 @@ def getRandomSubsample( fileList, year, **kwargs ):
         else:
             trackTimbreVectors = (tempTimbreVectors.T)[:, 1:]
         # They use the 0th timbre value as the loudness
-        trackLoudnessValues = tempTimbreVectors[:, 0]
+        trackLoudnessValues = (tempTimbreVectors.T)[:, 0]
         h5.close()
         # Store values
         nBeats = trackPitchVectors.shape[0]
@@ -122,7 +122,10 @@ def getRandomSubsample( fileList, year, **kwargs ):
 # <markdowncell>
 
 # "We use a single threshold set to 0.5 and map the original pitch vector values to 0 or 1"
-# "..we make use of a ternary, equal-frequency encoding"
+# 
+# "...we make use of a ternary, equal-frequency encoding"
+# 
+# "To study transitions between loudness values and build a complex network we use an unsupervised equal-width discretization into 300 equal steps."
 
 # <codecell>
 
@@ -136,21 +139,22 @@ def quantize( matrix, quantiles ):
     Output: 
         quantizedMatrix - ...
     """
+    # Make sure quantiles is a numpy arra
+    quantiles = np.array( quantiles )
     # Create output matrix
     quantizedMatrix = np.zeros( matrix.shape, dtype=np.int )
     # Convert to int values...
     for quantile in quantiles:
         quantizedMatrix += matrix > quantile
     # Make matrix binary if ony one quantile was given
-    if len( quantiles ) == 1:
+    if quantiles.shape == (1,):
         quantizedMatrix = np.array( quantizedMatrix, dtype=np.bool )
     return quantizedMatrix
 
 # <markdowncell>
 
 # "Before discretization, pitch descriptions of each track are automatically transposed to an equivalent main tonality, such that all pitch codewords are considered within the same tonal context or key. For this process we employ a circular shift strategy, correlating (shifted) per-track averages to cognitively-inspired tonal pro
-# 
-# les."
+# files."
 
 # <codecell>
 
@@ -196,14 +200,31 @@ def getQuantiles( matrix, quantiles ):
         matrix - matrix nVectors x nVariables of values
         quantiles - the quantiles to compute
     Output: 
-        quantilesPerColumn - array of size nVariables x nQuantiles indicating the quantile for each column
+        quantilesPerColumn - array of size nQuantiles x nVariables indicating the quantile for each column
     """
     # Get the number of columns (variables)
     nVariables = matrix.shape[1]
-    quantilesPerColumn = np.zeros( (nVariables, len( quantiles )) )
+    quantilesPerColumn = np.zeros( (len( quantiles ), nVariables) )
     for n in xrange( nVariables ):
-        quantilesPerColumn[n] = scipy.stats.mstats.mquantiles( matrix[:, n], quantiles )
+        quantilesPerColumn[:, n] = scipy.stats.mstats.mquantiles( matrix[:, n], quantiles )
     return quantilesPerColumn
+
+# <markdowncell>
+
+# "Loudness values are originally provided in decibels (dB), and limited within a range from 0 to 60. Nonetheless, in order to conform to the standard signal processing criterion [19], we subtract the loudness reference of 60 dB used in the million song dataset from them."
+
+# <codecell>
+
+def timbreZeroToDb( loudnessValues ):
+    """
+    Given a timbre coefficient zero, convert to dB in the range [0, 60]
+
+    Input:
+        loudnessValues - timbre coefficient 0
+    Output: 
+        loudnessValues - dB values
+    """
+    return np.clip( loudnessValues, 0, 60 ) - 60
 
 # <codecell>
 
@@ -216,8 +237,19 @@ if __name__ == "__main__":
         # Shift and quantize (simple binary threshold) the pitch vectors
         shiftedPitchVectors = shiftPitchVectors( pitchVectors, trackIndices )
         quantizedShiftedPitchVectors = quantize( shiftedPitchVectors, [.5] )
-        # Save file
         np.save( 'Data/subset-pitches-' + str( year ) + '.npy', quantizedShiftedPitchVectors )
+        # Get a representative sample of timbre vectors (skipping this for now as I'm not clear on how it's done)
+        #timbreSample = getTimbreSample( fileList )
+        # Quantize to quantiles
+        timbreQuantiles = getQuantiles( timbreVectors, [.33, .66] )
+        quantizedTimbreVectors = quantize( timbreVectors, timbreQuantiles )
+        np.save( 'Data/subset-timbre-' + str( year ) + '.npy', quantizedTimbreVectors )
+        # Convert timbre coefficient zero to dB values in [0, 60] and quantize them
+        loudnessValues = timbreZeroToDb( loudnessValues )
+        quantizedLoudnessValues = quantize( loudnessValues, np.linspace( -59.8, -.2, 299 ) )
+        np.save( 'Data/subset-loudness-' + str( year ) + '.npy', quantizedLoudnessValues )
+        
+    # Write out a bigger one for 2005 because there's lots of values for it!
     pitchVectors, timbreVectors, loudnessValues, trackIndices = getRandomSubsample( fileList, 2005, nVectors=1000000 )
     # Shift and quantize the pitch vectors
     shiftedPitchVectors = shiftPitchVectors( pitchVectors, trackIndices )
