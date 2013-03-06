@@ -81,7 +81,16 @@ def getRandomSubsample( fileList, year, **kwargs ):
             continue
         # Get the data we care about
         trackPitchVectors = msd.beat_aligned_feats.get_btchromas( h5 )
+        # Sometimes get_btchromas returns None
+        if trackPitchVectors is None:
+            continue
+        else:
+            trackPitchVectors = trackPitchVectors.T
         trackTimbreVectors = msd.beat_aligned_feats.get_bttimbre( h5 )
+        if trackTimbreVectors is None:
+            continue
+        else:
+            trackTimbreVectors = trackTimbreVectors.T
         # They use the 0th timbre value as the loudness
         trackLoudnessValues = trackTimbreVectors[:, 0]
         h5.close()
@@ -102,7 +111,10 @@ def getRandomSubsample( fileList, year, **kwargs ):
     trackIndices = trackIndices[:tracksWritten]
     # Did we end without getting enough vectors?
     if len( fileList ) == 0:
-        print "WARNING -- not enough tracks were found for all years."
+        print "WARNING -- {0} vectors requested, only {1} found for year {2}".format( nVectors, index, year )
+        pitchVectors = pitchVectors[:index]
+        timbreVectors = timbreVectors[:index]
+        loudnessValues = loudnessValues[:index]
     return pitchVectors, timbreVectors, loudnessValues, trackIndices
 
 # <markdowncell>
@@ -165,11 +177,16 @@ if __name__ == "__main__":
     # For now just get stuff from the subset... fewer vectors possible.
     fileList = getFiles( "Data/MillionSongSubset/data", ".h5" )
     for year in np.array([1955, 1965, 1975, 1985, 1995, 2005]):
-        pitchVectors, timbreVectors, loudnessValues, trackIndices = getRandomSubsample( fileList, year, nVectors=1000 )
+        pitchVectors, timbreVectors, loudnessValues, trackIndices = getRandomSubsample( fileList, year, nVectors=4000 )
         # Shift and quantize the pitch vectors
         shiftedPitchVectors = shiftPitchVectors( pitchVectors, trackIndices )
         quantizedShiftedPitchVectors = quantizePitchVectors( shiftedPitchVectors )
         # Save file
         np.save( 'Data/subset-pitches-' + str( year ) + '.npy', quantizedShiftedPitchVectors )
-        
+    pitchVectors, timbreVectors, loudnessValues, trackIndices = getRandomSubsample( fileList, 2005, nVectors=1000000 )
+    # Shift and quantize the pitch vectors
+    shiftedPitchVectors = shiftPitchVectors( pitchVectors, trackIndices )
+    quantizedShiftedPitchVectors = quantizePitchVectors( shiftedPitchVectors )
+    # Save file
+    np.save( 'Data/subset-pitches-2005-lots.npy', quantizedShiftedPitchVectors )
 
