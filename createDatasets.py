@@ -7,6 +7,7 @@ import numpy as np
 import msd
 import os
 import tables
+import scipy.stats.mstats
 
 # <codecell>
 
@@ -170,6 +171,29 @@ def shiftPitchVectors( pitchVectors, trackIndices ):
         bestShift = np.argmax( dotProducts )
         shiftedPitchVectors[trackStart:trackEnd] = np.roll( trackPitchVectors, bestShift, axis=1 )
     return shiftedPitchVectors
+
+# <markdowncell>
+
+# "Thresholds are set to the 33 and 66% quantiles of a representative sample of beat-based timbre description values."
+
+# <codecell>
+
+def getQuantiles( matrix, quantiles ):
+    """
+    Given a matrix, compute quantiles for each column
+
+    Input:
+        matrix - matrix nVectors x nVariables of values
+        quantiles - the quantiles to compute
+    Output: 
+        quantilesPerColumn - array of size nVariables x nQuantiles indicating the quantile for each column
+    """
+    # Get the number of columns (variables)
+    nVariables = matrix.shape[1]
+    quantilesPerColumn = np.zeros( (nVariables, len( quantiles )) )
+    for n in xrange( nVariables ):
+        quantilesPerColumn[n] = scipy.stats.mstats.mquantiles( matrix[:, n], quantiles )
+    return quantilesPerColumn
 
 # <codecell>
 
