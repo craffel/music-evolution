@@ -122,19 +122,29 @@ def getRandomSubsample( fileList, year, **kwargs ):
 # <markdowncell>
 
 # "We use a single threshold set to 0.5 and map the original pitch vector values to 0 or 1"
+# "..we make use of a ternary, equal-frequency encoding"
 
 # <codecell>
 
-def quantizePitchVectors( pitchVectors ):
+def quantize( matrix, quantiles ):
     """
-    Quantizes pitch vectors to binary values using a threshold of .5.
+    Quantizes to values using thresholds in quantiles
 
     Input:
-        pitchVectors - Matrix of pitch vectors
+        matrix - input matrix to quantize
+        quantiles - list of quantiles
     Output: 
-        quantizedPitchVectors - Matrix of quantized pitch vectors
+        quantizedMatrix - ...
     """
-    return pitchVectors > 0.5
+    # Create output matrix
+    quantizedMatrix = np.zeros( matrix.shape, dtype=np.int )
+    # Convert to int values...
+    for quantile in quantiles:
+        quantizedMatrix += matrix > quantile
+    # Make matrix binary if ony one quantile was given
+    if len( quantiles ) == 1:
+        quantizedMatrix = np.array( quantizedMatrix, dtype=np.bool )
+    return quantizedMatrix
 
 # <markdowncell>
 
@@ -203,15 +213,15 @@ if __name__ == "__main__":
     fileList = getFiles( "Data/MillionSongSubset/data", ".h5" )
     for year in np.array([1955, 1965, 1975, 1985, 1995, 2005]):
         pitchVectors, timbreVectors, loudnessValues, trackIndices = getRandomSubsample( fileList, year, nVectors=4000 )
-        # Shift and quantize the pitch vectors
+        # Shift and quantize (simple binary threshold) the pitch vectors
         shiftedPitchVectors = shiftPitchVectors( pitchVectors, trackIndices )
-        quantizedShiftedPitchVectors = quantizePitchVectors( shiftedPitchVectors )
+        quantizedShiftedPitchVectors = quantize( shiftedPitchVectors, [.5] )
         # Save file
         np.save( 'Data/subset-pitches-' + str( year ) + '.npy', quantizedShiftedPitchVectors )
     pitchVectors, timbreVectors, loudnessValues, trackIndices = getRandomSubsample( fileList, 2005, nVectors=1000000 )
     # Shift and quantize the pitch vectors
     shiftedPitchVectors = shiftPitchVectors( pitchVectors, trackIndices )
-    quantizedShiftedPitchVectors = quantizePitchVectors( shiftedPitchVectors )
+    quantizedShiftedPitchVectors = quantize( shiftedPitchVectors, [.5] )
     # Save file
     np.save( 'Data/subset-pitches-2005-lots.npy', quantizedShiftedPitchVectors )
 
