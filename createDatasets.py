@@ -10,6 +10,7 @@ import tables
 import scipy.stats.mstats
 import csv
 import collections
+import random
 
 # <codecell>
 
@@ -32,11 +33,6 @@ def makeFileListCSV( path, extension, csvFilename ):
             if os.path.splitext(file)[1] == extension:
                 # Write out row
                 csvWriter.writerow( [os.path.splitext(file)[0], os.path.join(root, file)] )
-
-# <codecell>
-
-# Generate the file list - this only needs to be run once.
-makeFileListCSV( "/Volumes/MILLIONSONG/data", '.h5', "data/MSDFileList.csv" )
 
 # <codecell>
 
@@ -224,7 +220,6 @@ def quantize( matrix, quantiles ):
 # <markdowncell>
 
 # "Before discretization, pitch descriptions of each track are automatically transposed to an equivalent main tonality, such that all pitch codewords are considered within the same tonal context or key. For this process we employ a circular shift strategy, correlating (shifted) per-track averages to cognitively-inspired tonal pro
-# 
 # files."
 
 # <codecell>
@@ -259,6 +254,84 @@ def shiftPitchVectors( pitchVectors, trackIndices ):
 
 # <markdowncell>
 
+# "We randomly chose one million timbre vectors from the dataset such that a maximum of 8,000 vectors corresponded to the same year."
+
+# <codecell>
+
+def getTimbreSample( fullFileList, yearToFileMapping, **kwargs ):
+    """
+    Get nVectors beat-based timbre vectors such that at most maxVectorsPerYear come from each year
+
+    Input:
+        fullFileList - a list of locations of all files to read vectors from
+        yearToFileMapping - dict such that yearToFileMapping[year] = [list of filenames for this year]
+        nVectors - number of vectors to retrieve (default 1,000,000)
+        maxVectorsPerYear - maximum number of vectors to grab for each year (default 8,000)
+    Output: 
+        timbreSample - nVectors timbre vectors sampled as described above
+    """
+    # Get keyword arguments
+    nVectors = kwargs.get( 'nVectors', 1000000 )
+    maxVectorsPerYear = kwargs.get( 'maxVectorsPerYear', 8000 )
+    # We'll be deleting from these, so copy them
+    yearToFileMapping = dict( yearToFileMapping )
+    fullFileList = dict( fullFileList )
+    # Keep track of the number of vectors grabbed per year
+    vectorsPerYear = {}
+    for year in yearToFileMapping:
+        vectorsPerYear[year] = 0
+    timbreSample = np.zeros( (nVectors, 11) )
+    # Keep track of the number of vectors grabbed total
+    index = 0
+    while index < nVectors:
+        # Have we run out of tracks to read?
+        if len( yearToFileMapping ) == 0:
+            print "Ran out of tracks!  Only read {0} vectors.".format( index )
+            timbreSample = timbreSample[:index]
+            break
+        # Generate a random year from the keys of yearToFileMapping
+        randomYear = random.choice( list( yearToFileMapping.keys() ) )
+        # Get the file list for this year
+        fileList = yearToFileMapping[randomYear]
+        # Get a random file from fileList
+        if len(fileList) > 1:
+            randomIndex = np.random.randint( 0, len(fileList) - 1 )
+            filename = fullFileList[fileList[randomIndex]]
+            del fileList[randomIndex]
+        else:
+            filename = fullFileList[fileList[0]]
+            del yearToFileMapping[randomYear]
+        # Get beat-based timbre vectors for this file
+        h5 = tables.openFile( filename, mode='r' )
+        # Get this entry's year
+        trackYear = msd.hdf5_getters.get_year( h5 )
+        # If the year is wrong, skip
+        if trackYear != randomYear:
+            h5.close()
+            continue
+        # We only want the last 11 timbre values but we don't know if get_bttimbre will return None
+        trackTimbreVectors = msd.beat_aligned_feats.get_bttimbre( h5 )
+        h5.close()
+        if trackTimbreVectors is None:
+            continue
+        else:
+            trackTimbreVectors = (trackTimbreVectors.T)[:, 1:]
+        # Check to see if we will have found maxVectorsPerYear vectors, and truncate the vectors and delete this year if so
+        if vectorsPerYear[randomYear] + trackTimbreVectors.shape[0] > maxVectorsPerYear:
+            trackTimbreVectors = trackTimbreVectors[:maxVectorsPerYear - vectorsPerYear[randomYear]]
+            if randomYear in yearToFileMapping:
+                del yearToFileMapping[randomYear]
+        # Store the vectors for this file
+        storeRange = np.r_[index:np.clip( index + trackTimbreVectors.shape[0], 0, nVectors)]
+        valuesToStore = timbreSample[storeRange].shape[0]
+        timbreSample[storeRange] = trackTimbreVectors[:valuesToStore]
+        index += trackTimbreVectors.shape[0]
+        vectorsPerYear[randomYear] += trackTimbreVectors.shape[0]
+    print vectorsPerYear
+    return timbreSample
+
+# <markdowncell>
+
 # "Thresholds are set to the 33 and 66% quantiles of a representative sample of beat-based timbre description values."
 
 # <codecell>
@@ -288,7 +361,7 @@ def getQuantiles( matrix, quantiles ):
 
 def timbreZeroToDb( loudnessValues ):
     """
-    Given a timbre coefficient zero, convert to dB in the range [0, 60]
+    Given a timbre coefficient zero, convert to dB in the range [-60, 0]
 
     Input:
         loudnessValues - timbre coefficient 0
@@ -299,11 +372,24 @@ def timbreZeroToDb( loudnessValues ):
 
 # <codecell>
 
-# Create the data subset
+# Generate the file list - this only needs to be run once.
+makeFileListCSV( "/Volumes/MILLIONSONG/data", '.h5', "data/MSDFileList.csv" )
+
+# <codecell>
+
+# Generate the timbre sample - this also only needs to be run once.
+fullFileList = getFileListFromCSV( 'data/MSDFileList.csv' )
+yearToFileMapping = getYearToFileMapping( "/Volumes/MILLIONSONG/tracks_per_year.txt" )
+timbreSample = getTimbreSample( fullFileList, yearToFileMapping )
+np.save( 'data/timbreSample.npy', timbreSample )
+
+# <codecell>
+
+# Create the data subset - this also only needs to be run once!!!!
 if __name__ == "__main__":
-    # For now just get stuff from the subset... fewer vectors possible.
     fullFileList = getFileListFromCSV( 'data/MSDFileList.csv' )
     yearToFileMapping = getYearToFileMapping( "/Volumes/MILLIONSONG/tracks_per_year.txt" )
+    timbreSample = np.load( 'data/timbreSample.npy' )
     for year in np.array([1955, 1965, 1975, 1985, 1995, 2005]):
         fileList = getFilenamesForYearRange( fullFileList, yearToFileMapping, np.arange(year - 2, year + 3) )
         pitchVectors, timbreVectors, loudnessValues, trackIndices = getRandomSubsample( fileList, year )
@@ -311,25 +397,14 @@ if __name__ == "__main__":
         shiftedPitchVectors = shiftPitchVectors( pitchVectors, trackIndices )
         quantizedShiftedPitchVectors = quantize( shiftedPitchVectors, [.5] )
         np.save( 'Data/msd-pitches-' + str( year ) + '.npy', quantizedShiftedPitchVectors )
-        # Get a representative sample of timbre vectors (skipping this for now as I'm not clear on how it's done)
-        #timbreSample = getTimbreSample( fileList )
         # Quantize to quantiles
-        timbreQuantiles = getQuantiles( timbreVectors, [.33, .66] )
+        timbreQuantiles = getQuantiles( timbreSample, [.33, .66] )
         quantizedTimbreVectors = quantize( timbreVectors, timbreQuantiles )
         np.save( 'Data/msd-timbre-' + str( year ) + '.npy', quantizedTimbreVectors )
         # Convert timbre coefficient zero to dB values in [0, 60] and quantize them
         loudnessValues = timbreZeroToDb( loudnessValues )
         quantizedLoudnessValues = quantize( loudnessValues, np.linspace( -59.8, -.2, 299 ) )
         np.save( 'Data/msd-loudness-' + str( year ) + '.npy', quantizedLoudnessValues )
-        
-    # Write out a bigger one for 2005 because there's lots of values for it!
-    #pitchVectors, timbreVectors, loudnessValues, trackIndices = getRandomSubsample( fileList, 2005, nVectors=1000000 )
-    # Shift and quantize the pitch vectors
-    #shiftedPitchVectors = shiftPitchVectors( pitchVectors, trackIndices )
-    #quantizedShiftedPitchVectors = quantize( shiftedPitchVectors, [.5] )
-    # Save file
-    #np.save( 'Data/subset-pitches-2005-lots.npy', quantizedShiftedPitchVectors )
-
-# <codecell>
-
+        # Also save the track indices
+        np.save( 'Data/msd-trackIndices-' + str( year ) + '.npy', trackIndices )
 
