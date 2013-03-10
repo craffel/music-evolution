@@ -3,6 +3,7 @@
 
 # <codecell>
 
+import test
 import powerlaw
 import plfit
 import numpy as np
@@ -55,7 +56,7 @@ def fitShiftedDiscretePowerLaw( data ):
     # Store D, zmin, beta, c for each iteration
     results = np.zeros( ( nIterations, 4 ) )
     # Perform the fit for each value in a log range from 0 to 1000
-    for n, c in enerateLogSpacedIntegers( 1000, nIterations ) ):
+    for n, c in enumerate( generateLogSpacedIntegers( 1000, nIterations ) ):
         MyPL = plfit.plfit( data + c )
         results[n] = np.array( [MyPL._ks, MyPL._xmin, 1 + 1/MyPL._alpha, c] )
     # Sort the resutls by D
