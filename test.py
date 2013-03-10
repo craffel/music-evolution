@@ -14,6 +14,7 @@ try:
     import collections
     import random
     import sys
+    import glob
 except:
     print "Failed to import base Python modules - is there something wrong with your Python install?  Are you using Python 2.7?"
     sys.exit(1)
@@ -64,7 +65,7 @@ if not os.path.exists( paths.subsamplePath ):
 if not os.path.exists( os.path.split( paths.fileListName )[0] ):
     print "The directory of the fileListName you specified in paths.py doesn't exist, so the file will not be able to be created.  Please create it or edit paths.py and try again."
     sys.exit(1)
-if not os.path.exists( os.path.split( paths.yearToFileMapping )[0] ):
-    print "The directory of the yearToFileMapping you specified in paths.py doesn't exist, so the file will not be able to be created.  Please create it or edit paths.py and try again."
+if not os.path.exists( os.path.split( paths.yearToFileMappingName )[0] ):
+    print "The directory of the yearToFileMappingName you specified in paths.py doesn't exist, so the file will not be able to be created.  Please create it or edit paths.py and try again."
     sys.exit(1)
 
