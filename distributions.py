@@ -7,6 +7,7 @@ import test
 import powerlaw
 import plfit
 import numpy as np
+import scipy.special
 
 # <markdowncell>
 
@@ -61,7 +62,22 @@ def fitShiftedDiscretePowerLaw( data ):
         results[n] = np.array( [MyPL._ks, MyPL._xmin, 1 + 1/MyPL._alpha, c] )
     # Sort the resutls by D
     results = results[np.argsort( results[:, 0] )]
-    print results
     # Return the best params
     return results[0, 1], results[0, 2], results[0, 3]
+
+def computeShiftedDiscretePowerLaw( zmin, beta, c, z ):
+    """
+    Computes the power probability curve for the given parameters at the points in points.
+    
+    Input:
+        zmin - zmin paramter as defined in the text
+        beta - ...
+        c - ...
+        z - points to compute the curve at
+    Output:
+        curve - the value of the function at all points in points
+    """
+    # Based on equation 1 in the supplementary materials
+    # y=scipy.special.zeta(x,q) returns the Riemann zeta function of two arguments: sum((k+q)**(-x),k=0..inf)
+    return 1.0/(scipy.special.zeta( beta, c + zmin )*np.power( (c + z), beta ) )
 

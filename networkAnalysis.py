@@ -78,4 +78,5 @@ if __name__ == "__main__":
     #G.degree(0)
     #nx.degree_pearson_correlation_coefficient( G )
     #nx.degree_assortativity_coefficient( G )
+    #nx.double_edge_swap( G, 1000000 )
 

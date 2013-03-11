@@ -10,7 +10,7 @@
 # The path to the MSD
 msdPath = "/Volumes/MILLIONSONG/data"
 # The path where the random subsampling of the MSD will be/is saved, including the timbre sample.  Should be able to store 60+ GB of data
-subsamplePath = "./Data/"
+subsamplePath = "/Volumes/MILLIONSONG/Sampling"
 # The path (with filename) of the .csv filelist of all MSD files will be/is saved.  Should end in .csv
 fileListName = "./Data/MSDFileList.csv"
 # The path (with filename) of the .txt file included with the MSD which lists the items in the MSD by year.  Should end in .txt

@@ -84,28 +84,3 @@ def plotRankFrequency( rankFrequency, color ):
     """
     plt.loglog( rankFrequency, '.' + color )
 
-# <codecell>
-
-if __name__ == "__main__":
-    # Get .npy files for pitch vectors
-    import glob
-    fileList = glob.glob('./Data/msd-pitches-*5.npy')
-    colors = ['b', 'c', 'g', 'y', 'r', 'm']
-    # Generate figure 2a
-    plt.figure( figsize = (6, 12) )
-    for n, filename in enumerate( fileList ):
-        pitchVectors = np.load( filename )
-        # Get rank frequency, etc. and plot it (with shifting)
-        rankFrequency, rankCounts, sortedMatrix = getRankFrequency( pitchVectors )
-        plotRankFrequency( rankFrequency*(10**n), colors[n] )
-    plt.legend( fileList, loc='lower left' )
-
-# <codecell>
-
-pitchVectors = np.load( './Data/msd-pitches-2005.npy' )
-rankFrequency, rankCounts, sortedMatrix = getRankFrequency( pitchVectors )
-counts, probabilities = computeDistribution( rankCounts )
-plt.figure()
-plt.loglog( counts, probabilities, '.' )
-_ = plt.axis( [1, 1e8, 1e-4, 1e-1] )
-
