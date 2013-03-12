@@ -36,16 +36,17 @@ def packValues( matrix ):
 
 def createGraph( codewordVector, trackIndices ):
     """
-    Given a vector whose entries are indices of codewords, construct a weighted directed graph
+    Given a vector whose entries are indices of codewords, construct a weighted undirected graph
     
     Input:
         codewordVector - vector of codeword indices
         trackIndices - indices in the matrix where a track starts/ends
     Output:
-        g - a weighted directed graph
+        g - a weighted undirected graph
     """
-    g = igraph.Graph( directed=False )
-    # Add all codewords present in the vector to the graph
+    # Start with a directed graph.  We'll combine parallel edges later.
+    g = igraph.Graph( directed=True )
+    # Add all codewords present in the vector as vertices in the graph
     uniqueCodewords = np.unique( codewordVector )
     g.add_vertices( uniqueCodewords.shape[0] )
     # Dictionary which maps codeword to codeword index
@@ -55,27 +56,17 @@ def createGraph( codewordVector, trackIndices ):
     # Grab each track
     for trackStart, trackEnd in zip( trackIndices, np.append( trackIndices[1:], codewordVector.shape[0] ) ):
         trackVector = codewordVector[trackStart:trackEnd]
-        print trackStart
-        # Iterate over codewords
-        for start, end in zip( trackVector[:-1], trackVector[1:] ):
-            # Don't store self-links
-            if start == end:
-                continue
-            # Make sure all links go from smaller to larger number - this will effectively sum up weights for the undirected graph.
-            elif start > end:
-                temp = start
-                start = end
-                end = temp
-            # Get the vertex indices
-            startIndex = codewordDictionary[start]
-            endIndex = codewordDictionary[end]
-            # If we already have this edge, just add to its weight
-            if g.get_eid( startIndex, endIndex, error=False) is not -1:
-                g.es[g.get_eid( startIndex, endIndex)]['weight'] += 1
-            # If we don't have it, add it
-            else:
-                g.add_edge( startIndex, endIndex )
-                g.es[g.get_eid( startIndex, endIndex)]['weight'] = 1
+        # Get the vertex indices of the starts end ends of each edge in trackVector
+        startIndices = [codewordDictionary[n] for n in trackVector[:-1]]
+        endIndices = [codewordDictionary[n] for n in trackVector[1:]]
+        # Add all of the edges
+        g.add_edges( zip( startIndices, endIndices ) )
+    # Set all edge's weight to 0
+    g.es['weight'] = 1
+    # Remove parallel edges (combining their weight) and self-loops
+    g.simplify( combine_edges=sum )
+    # Convert from directed to undirected, summing edges which are parallel again
+    g.to_undirected( combine_edges = sum )
     return g
 
 # <codecell>
