@@ -4,7 +4,7 @@
 # <codecell>
 
 import test
-import networkx as nx
+import igraph
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -42,12 +42,20 @@ def createGraph( codewordVector, trackIndices ):
         codewordVector - vector of codeword indices
         trackIndices - indices in the matrix where a track starts/ends
     Output:
-        G - a weighted directed graph
+        g - a weighted directed graph
     """
-    G = nx.Graph()
+    g = igraph.Graph( directed=False )
+    # Add all codewords present in the vector to the graph
+    uniqueCodewords = np.unique( codewordVector )
+    g.add_vertices( uniqueCodewords.shape[0] )
+    # Dictionary which maps codeword to codeword index
+    codewordDictionary = dict((key, value) for (value, key) in enumerate( uniqueCodewords ))
+    # Store the codeword name
+    g.vs['codeword'] = list( uniqueCodewords )
     # Grab each track
     for trackStart, trackEnd in zip( trackIndices, np.append( trackIndices[1:], codewordVector.shape[0] ) ):
         trackVector = codewordVector[trackStart:trackEnd]
+        print trackStart
         # Iterate over codewords
         for start, end in zip( trackVector[:-1], trackVector[1:] ):
             # Don't store self-links
@@ -58,20 +66,24 @@ def createGraph( codewordVector, trackIndices ):
                 temp = start
                 start = end
                 end = temp
+            # Get the vertex indices
+            startIndex = codewordDictionary[start]
+            endIndex = codewordDictionary[end]
             # If we already have this edge, just add to its weight
-            if G.has_edge( start, end ):
-                G[start][end]['weight'] += 1
+            if g.get_eid( startIndex, endIndex, error=False) is not -1:
+                g.es[g.get_eid( startIndex, endIndex)]['weight'] += 1
             # If we don't have it, add it
             else:
-                G.add_edge( start, end, {'weight':1} )
-    return G
+                g.add_edge( startIndex, endIndex )
+                g.es[g.get_eid( startIndex, endIndex)]['weight'] = 1
+    return g
 
 # <codecell>
 
 if __name__ == "__main__":
     pitchVectors = np.load( './Data/msd-pitches-2005.npy' )
     trackIndices = np.load( './Data/msd-trackIndices-2005.npy' )
-    G = createGraph( packValues( pitchVectors ), trackIndices )
+    %prun g = createGraph( packValues( pitchVectors ), trackIndices )
     # Some statistics they use:
     #nx.average_shortest_path_length( G )
     #nx.average_clustering( G )
@@ -79,4 +91,7 @@ if __name__ == "__main__":
     #nx.degree_pearson_correlation_coefficient( G )
     #nx.degree_assortativity_coefficient( G )
     #nx.double_edge_swap( G, 1000000 )
+
+# <codecell>
+
 
