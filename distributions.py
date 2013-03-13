@@ -17,7 +17,7 @@ def computeShiftedDiscretePowerLaw( beta, c, zmin, z ):
     Computes the power probability curve for the given parameters at the points in points.
     
     Input:
-        beta - beta paramter as defined in the text
+        beta - beta parameter as defined in the text
         c - ...
         zmin - ...
         z - points to compute the curve at
@@ -34,15 +34,17 @@ def computeShiftedDiscretePowerLaw( beta, c, zmin, z ):
 
 # <markdowncell>
 
-# Given $P(z | \theta) = \frac{(c+z)^{-\beta }}{\zeta[\beta ,c+z_{\text{min}}]}$ where $\theta = \{\beta, c, z_{\text{min}}\}$ we want to maximize the log likelihood over all $N_m$ samples of the random variable $z$ that we have: $\mathcal{L}(\beta, c, z_{min}) = \frac{1}{N_m} \sum_{i = 1}^{N_m} L$ where $L = \log P(z_i | \theta)$.
+# Given $P(z | \theta) = \frac{(c+z)^{-\beta }}{\zeta[\beta ,c+z_{\text{min}}]}$ where $\theta = \{\beta, c, z_{\text{min}}\}$ we want to maximize the log likelihood over all $N_m$ samples of the random variable $z$ that we have.
+# 
+# Define the log likelihood as $\mathcal{L}(\beta, c, z_{min}) = \frac{1}{N_m} \sum_{i = 1}^{N_m} L$ where $L = \log P(z_i | \theta) = -B\log[c + z] - \log[\zeta[\beta ,c+z_{\text{min}}]]$.
 # 
 # Taking partial derivatives, we have 
 # 
-# $\frac{\delta L}{\delta c} = (c+z)^{\beta } \zeta[\beta ,c+z_{\text{min}}] \left(-\frac{(c+z)^{-1-\beta } \beta }{\zeta[\beta ,c+z_{\text{min}}]}+\frac{(c+z)^{-\beta } \beta  \zeta[1+\beta ,c+z_{\text{min}}]}{\zeta[\beta ,c+z_{\text{min}}]^2}\right) = \frac{\beta  (-\zeta[\beta ,c+z_{\text{min}}]+(c+z) \zeta[1+\beta ,c+z_{\text{min}}])}{(c+z) \zeta[\beta ,c+z_{\text{min}}]}$
+# $\frac{\delta L}{\delta c} = -\frac{\beta}{c + z} + \frac{\beta \zeta[1 + \beta, c + z_{\text{min}}]}{\zeta[\beta, c + z_{\text{min}}] }$
 # 
 # $\frac{\delta L}{\delta z_{\text{min}}} = \frac{\beta  \zeta[1+\beta ,c+z_{\text{min}}]}{\zeta[\beta ,c+z_{\text{min}}]}$
 # 
-# $\frac{\delta L}{\delta \beta} = (c+z)^{\beta } \zeta[\beta ,c+z_{\text{min}}] \left(-\frac{(c+z)^{-\beta } \log[c+z]}{\zeta[\beta ,c+z_{\text{min}}]}-\frac{(c+z)^{-\beta } \zeta^\prime[\beta ,c+z_{\text{min}}]}{\zeta[\beta ,c+z_{\text{min}}]^2}\right) = -\log[c+z]-\frac{\zeta^\prime[\beta ,c+z_{\text{min}}]}{\zeta[\beta ,c+z_{\text{min}}]}$
+# $\frac{\delta L}{\delta \beta} = -\log[c+z]-\frac{\zeta^\prime[\beta ,c+z_{\text{min}}]}{\zeta[\beta ,c+z_{\text{min}}]}$
 # 
 # Note that the derivative of the Hurwitz Zeta function with respect to its first argument (here $\beta$) is not defined, so we need to use the approximation
 # 
@@ -57,7 +59,7 @@ def fitShiftedDiscretePowerLaw( z ):
     Input:
         z - data to fit to
     Output:
-        beta - beta paramter as defined in the text
+        beta - beta parameter as defined in the text
         c - ...
         zmin - ...
     """
@@ -79,8 +81,7 @@ def fitShiftedDiscretePowerLaw( z ):
         beta = theta[0]
         c = theta[1]
         zmin = theta[2]
-        zetaBCZ = scipy.special.zeta( beta, c + zmin )
-        logProbabilities = beta*(-zetaBCZ + (c + z)*scipy.special.zeta( 1 + beta, c + zmin ))/((c + z)*zetaBCZ)
+        logProbabilities = -beta/(z + c) + B*scipy.specia.zeta( 1 + beta, c + zmin )/scipy.special.zeta( B, c + zmin )
         return -np.mean( logProbabilities )
     # Partial derivative of L with respect to zmin
     def dLdzmin( theta, *args ):
