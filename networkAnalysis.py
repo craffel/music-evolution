@@ -109,7 +109,7 @@ def clusteringCoefficient( g ):
     Output:
         clusteringCoefficient - ...
     """
-    localTransitivity = np.array( g_read.transitivity_local_undirected( weights='weight' ) )
+    localTransitivity = np.array( g.transitivity_local_undirected( weights='weight' ) )
     # Sometimes this returns NaNs!
     localTransitivity = np.delete( localTransitivity, np.nonzero( np.isnan(localTransitivity) )[0] )
     return np.mean( localTransitivity )
