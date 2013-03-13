@@ -12,14 +12,14 @@ import scipy.optimize
 
 # <codecell>
 
-def computeShiftedDiscretePowerLaw( zmin, beta, c, z ):
+def computeShiftedDiscretePowerLaw( beta, c, zmin, z ):
     """
     Computes the power probability curve for the given parameters at the points in points.
     
     Input:
-        zmin - zmin paramter as defined in the text
-        beta - ...
+        beta - beta paramter as defined in the text
         c - ...
+        zmin - ...
         z - points to compute the curve at
     Output:
         curve - the value of the function at all points in points
