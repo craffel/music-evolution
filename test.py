@@ -15,6 +15,7 @@ try:
     import random
     import sys
     import glob
+    import tempfile
 except:
     print "Failed to import base Python modules - is there something wrong with your Python install?  Are you using Python 2.7?"
     sys.exit(1)
@@ -49,9 +50,15 @@ except:
     print "scipy(.stats) not found.  Please install from http://scipy.org/"
     sys.exit(1)
 try:
+    import igraph
+except:
+    print "igraph note found.  Please install from http://igraph.sourceforge.net/"
+    sys.exit(1)
+try:
     import paths
 except:
     print "Couldn't find paths.py, which should have been part of the package you downloaded.  Did you mess with the directory structure?"
+    sys.exit(1)
 
 # <codecell>
 

@@ -5,7 +5,10 @@
 
 import test
 import igraph
+import networkx as nx
 import numpy as np
+import tempfile
+import os
 import matplotlib.pyplot as plt
 
 # <markdowncell>
@@ -44,45 +47,78 @@ def createGraph( codewordVector, trackIndices ):
     Output:
         g - a weighted undirected graph
     """
-    # Start with a directed graph.  We'll combine parallel edges later.
-    g = igraph.Graph( directed=True )
-    # Add all codewords present in the vector as vertices in the graph
-    uniqueCodewords = np.unique( codewordVector )
-    g.add_vertices( uniqueCodewords.shape[0] )
-    # Dictionary which maps codeword to codeword index
-    codewordDictionary = dict((key, value) for (value, key) in enumerate( uniqueCodewords ))
-    # Store the codeword name
-    g.vs['codeword'] = list( uniqueCodewords )
+    # nx.Graph is the undirected graph class
+    G = nx.Graph()
     # Grab each track
     for trackStart, trackEnd in zip( trackIndices, np.append( trackIndices[1:], codewordVector.shape[0] ) ):
         trackVector = codewordVector[trackStart:trackEnd]
-        # Get the vertex indices of the starts end ends of each edge in trackVector
-        startIndices = [codewordDictionary[n] for n in trackVector[:-1]]
-        endIndices = [codewordDictionary[n] for n in trackVector[1:]]
-        # Add all of the edges
-        g.add_edges( zip( startIndices, endIndices ) )
-    # Set all edge's weight to 0
-    g.es['weight'] = 1
-    # Remove parallel edges (combining their weight) and self-loops
-    g.simplify( combine_edges=sum )
-    # Convert from directed to undirected, summing edges which are parallel again
-    g.to_undirected( combine_edges = sum )
+        # Iterate over codewords
+        for start, end in zip( trackVector[:-1], trackVector[1:] ):
+            # Don't store self-links
+            if start == end:
+                continue
+            # Make sure all links go from smaller to larger number - this will effectively sum up weights for the undirected graph.
+            elif start > end:
+                temp = start
+                start = end
+                end = temp
+            # If we already have this edge, just add to its weight
+            if G.has_edge( start, end ):
+                G[start][end]['weight'] += 1
+            # If we don't have it, add it
+            else:
+                G.add_edge( start, end, {'weight':1} )
+    # Embarrassingly, this is the fastest way to do this I can figure out.
+    fd, tempFilename = tempfile.mkstemp()
+    nx.write_gml( G, tempFilename )
+    g = igraph.Graph.Read_GML( tempFilename )
+    os.close( fd )
+    os.remove( tempFilename )
     return g
 
-# <codecell>
+# <markdowncell>
 
-if __name__ == "__main__":
-    pitchVectors = np.load( './Data/msd-pitches-2005.npy' )
-    trackIndices = np.load( './Data/msd-trackIndices-2005.npy' )
-    %prun g = createGraph( packValues( pitchVectors ), trackIndices )
-    # Some statistics they use:
-    #nx.average_shortest_path_length( G )
-    #nx.average_clustering( G )
-    #G.degree(0)
-    #nx.degree_pearson_correlation_coefficient( G )
-    #nx.degree_assortativity_coefficient( G )
-    #nx.double_edge_swap( G, 1000000 )
+# "The global properties of the network are probed by means of the average shortest path length"
 
 # <codecell>
 
+def averageShortestPathLength( g ):
+    """
+    Computes the average shortest path length of a graph.
+    
+    Input:
+        g - A graph
+    Output:
+        averageShortestPathLength - ...
+    """
+    shortestPathLengths = g.shortest_paths( weights='weight' )
+    return np.mean( shortestPathLengths )
+
+# <markdowncell>
+
+# "The local order of the network is measured by the clustering coecient C. This coecient is obtained as an average of the local clustering coecient of all nodes of degrees above 1"
+
+# <codecell>
+
+def clusteringCoefficient( g ):
+    """
+    Computes the clustering coefficient of a graph.
+    
+    Input:
+        g - A graph
+    Output:
+        clusteringCoefficient - ...
+    """
+    localTransitivity = np.array( g_read.transitivity_local_undirected( weights='weight' ) )
+    # Sometimes this returns NaNs!
+    localTransitivity = np.delete( localTransitivity, np.nonzero( np.isnan(localTransitivity) )[0] )
+    return np.mean( localTransitivity )
+
+# <codecell>
+
+pitchVectors = np.load( './Data/msd-pitches-2005.npy' )
+trackIndices = np.load( './Data/msd-trackIndices-2005.npy' )
+g = createGraph( packValues( pitchVectors ), trackIndices )
+print averageShortestPathLength( g )
+print clusteringCoefficient( g )
 
