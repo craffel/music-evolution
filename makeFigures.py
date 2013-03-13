@@ -112,15 +112,15 @@ plt.legend( yearNames, loc='lower left' )
 # <codecell>
 
 # The variables we'll be computing
-averageShortestPathLength = np.zeros( 2009 - 1955 )
-clusteringCoefficient = np.zeros( 2009 - 1955 )
+averageShortestPathLengths = np.zeros( 2009 - 1955 )
+clusteringCoefficients = np.zeros( 2009 - 1955 )
 # Load in pitch vectors for each year
 for n, year in enumerate( np.arange( 1955, 2009 ) ):
     pitchVectors = np.load( os.path.join( paths.subsamplePath, 'msd-pitches-' + str(year) + '-0.npy' ) )
     trackIndices = np.load( os.path.join( paths.subsamplePath, 'msd-trackIndices-' + str(year) + '-0.npy' ) )
     # Create network
     G = createGraph( packValues( pitchVectors ), trackIndices )
-    averageShortestPathLength[n] = nx.average_shortest_path_length( G )
-    clusteringCoefficient[n] = nx.average_clustering( G )
-plt.scatter( clusteringCoefficient, averageShortestPathLength, c=np.arange( 2009-1955 ) )
+    averageShortestPathLengths[n] = averageShortestPathLength( G )
+    clusteringCoefficients[n] = clusteringCoefficient( G )
+plt.scatter( clusteringCoefficients, averageShortestPathLengths, c=np.arange( 2009-1955 ) )
 
