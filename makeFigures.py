@@ -24,7 +24,7 @@ import os
 
 # Get .npy files for pitch vectors for 1955, 1965, ...
 import glob
-fileList = glob.glob( os.path.join( paths.subsamplePath, 'msd-pitches-*5.npy' ) )
+fileList = glob.glob( os.path.join( paths.subsamplePath, 'msd-pitches-*5-0.npy' ) )
 # Colors for each line (a vaguely close match)
 colors = ['b', 'c', 'g', 'y', 'r', 'm']
 # Their figure is of odd size.
@@ -48,9 +48,9 @@ plt.legend( yearNames, loc='lower left' )
 # <codecell>
 
 # Just plotting three year's worth here
-fileList = [os.path.join( paths.subsamplePath, 'msd-pitches-1965.npy' )]
-fileList += [os.path.join( paths.subsamplePath, 'msd-pitches-1985.npy' )]
-fileList += [os.path.join( paths.subsamplePath, 'msd-pitches-2005.npy' )]
+fileList = [os.path.join( paths.subsamplePath, 'msd-pitches-1965-0.npy' )]
+fileList += [os.path.join( paths.subsamplePath, 'msd-pitches-1985-0.npy' )]
+fileList += [os.path.join( paths.subsamplePath, 'msd-pitches-2005-0.npy' )]
 for n, filename in enumerate( fileList ):
     pitchVectors = np.load( filename )
     rankFrequency, rankCounts, sortedMatrix = getRankFrequency( pitchVectors )
@@ -58,16 +58,51 @@ for n, filename in enumerate( fileList ):
     counts, probabilities = computeDistribution( rankCounts )
     # Plot, shifted horizontally.
     plt.loglog( counts*(10**n), probabilities, '.' )
+    # Fitting seems broken right now
+    '''
     # Fit with power law
-    zmin, beta, c = fitShiftedDiscretePowerLaw( probabilities )
+    beta, c, zmin = fitShiftedDiscretePowerLaw( probabilities )
     # Get power law fit curve
-    probabilityCurve = computeShiftedDiscretePowerLaw( zmin, beta, c, np.sort( counts ) )
+    probabilityCurve = computeShiftedDiscretePowerLaw( beta, c, zmin, np.sort( counts ) )
     plt.loglog( np.sort( counts )*(10**n), probabilityCurve, 'k' )
+    '''
 # Make the axes the same as theirs
 #_ = plt.axis( [1, 1e8, 1e-4, 1e-1] )
 yearNames = [os.path.split( filename )[1][12:16] for filename in fileList]
-# We plotted two lines per year... double the yea rlist
-yearNames = [item for sublist in zip( yearNames, yearNames ) for item in sublist]
+# We plotted two lines per year... double the year list
+#yearNames = [item for sublist in zip( yearNames, yearNames ) for item in sublist]
+plt.legend( yearNames, loc='lower left' )
+
+# <markdowncell>
+
+# This is DAn's intepretation of what is actually being plotted in Figure 2(b), as the above obviously does not match the text.
+
+# <codecell>
+
+# Just plotting three year's worth here
+fileList = [os.path.join( paths.subsamplePath, 'msd-pitches-1965-0.npy' )]
+fileList += [os.path.join( paths.subsamplePath, 'msd-pitches-1985-0.npy' )]
+fileList += [os.path.join( paths.subsamplePath, 'msd-pitches-2005-0.npy' )]
+for n, filename in enumerate( fileList ):
+    pitchVectors = np.load( filename )
+    rankFrequency, rankCounts, sortedMatrix = getRankFrequency( pitchVectors )
+    # Compute a log-binned histogram of the counts
+    hist, bins = np.histogram( np.log( rankCounts ), 25 )
+    # Plot, shifted horizontally.
+    plt.loglog( np.exp( bins[:-1] )*10**n, hist, '.' )
+    # Fitting seems broken right now
+    '''
+    # Fit with power law
+    beta, c, zmin = fitShiftedDiscretePowerLaw( probabilities )
+    # Get power law fit curve
+    probabilityCurve = computeShiftedDiscretePowerLaw( beta, c, zmin, np.sort( counts ) )
+    plt.loglog( np.sort( counts )*(10**n), probabilityCurve, 'k' )
+    '''
+# Make the axes the same as theirs
+#_ = plt.axis( [1, 1e8, 1e-4, 1e-1] )
+yearNames = [os.path.split( filename )[1][12:16] for filename in fileList]
+# We plotted two lines per year... double the year list
+#yearNames = [item for sublist in zip( yearNames, yearNames ) for item in sublist]
 plt.legend( yearNames, loc='lower left' )
 
 # <markdowncell>
@@ -87,8 +122,5 @@ for n, year in enumerate( np.arange( 1955, 2009 ) ):
     G = createGraph( packValues( pitchVectors ), trackIndices )
     averageShortestPathLength[n] = nx.average_shortest_path_length( G )
     clusteringCoefficient[n] = nx.average_clustering( G )
-plt.scatter( clusteringCoefficient, averageShortedPathLength, c=plt.cm.rainbow( 2009-1955 ) )
-
-# <codecell>
-
+plt.scatter( clusteringCoefficient, averageShortestPathLength, c=np.arange( 2009-1955 ) )
 
