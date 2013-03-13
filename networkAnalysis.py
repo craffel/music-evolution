@@ -114,11 +114,3 @@ def clusteringCoefficient( g ):
     localTransitivity = np.delete( localTransitivity, np.nonzero( np.isnan(localTransitivity) )[0] )
     return np.mean( localTransitivity )
 
-# <codecell>
-
-pitchVectors = np.load( './Data/msd-pitches-2005.npy' )
-trackIndices = np.load( './Data/msd-trackIndices-2005.npy' )
-g = createGraph( packValues( pitchVectors ), trackIndices )
-print averageShortestPathLength( g )
-print clusteringCoefficient( g )
-
