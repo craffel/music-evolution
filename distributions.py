@@ -4,8 +4,6 @@
 # <codecell>
 
 import test
-import powerlaw
-import plfit
 import numpy as np
 import scipy.special
 import scipy.optimize
