@@ -46,7 +46,7 @@ def computeShiftedDiscretePowerLaw( beta, c, zmin, z ):
 # 
 # $\frac{\delta L}{\delta \beta} = -\log[c+z]-\frac{\zeta^\prime[\beta ,c+z_{\text{min}}]}{\zeta[\beta ,c+z_{\text{min}}]}$
 # 
-# Note that the derivative of the Hurwitz Zeta function with respect to its first argument (here $\beta$) is not defined, so we need to use the approximation
+# Note that the derivative of the Hurwitz Zeta function with respect to its first argument (here $\beta$) is not defined, so we need to use the approximation (Clauset et al B.15)
 # 
 # $\zeta^\prime[ \beta, c + z_{\text{min}} ] \approx -\frac{(c + z_{\text{min}} - \frac{1}{2})^{-\beta + 1}}{\beta - 1} \left( \frac{1}{\beta - 1} + \log[c + z_{\text{min}} - \frac{1}{2}] \right)$
 
@@ -81,7 +81,7 @@ def fitShiftedDiscretePowerLaw( z ):
         beta = theta[0]
         c = theta[1]
         zmin = theta[2]
-        logProbabilities = -beta/(z + c) + B*scipy.specia.zeta( 1 + beta, c + zmin )/scipy.special.zeta( B, c + zmin )
+        logProbabilities = -beta/(z + c) + beta*scipy.special.zeta( 1 + beta, c + zmin )/scipy.special.zeta( beta, c + zmin )
         return -np.mean( logProbabilities )
     # Partial derivative of L with respect to zmin
     def dLdzmin( theta, *args ):
