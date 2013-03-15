@@ -39,6 +39,7 @@ for n, filename in enumerate( fileList ):
 # Get year names out of file names (kind of a hack but hey) and make them the legend
 yearNames = [os.path.split( filename )[1][12:16] for filename in fileList]
 plt.legend( yearNames, loc='lower left' )
+plt.show()
     
 
 # <markdowncell>
@@ -72,6 +73,7 @@ yearNames = [os.path.split( filename )[1][12:16] for filename in fileList]
 # We plotted two lines per year... double the year list
 #yearNames = [item for sublist in zip( yearNames, yearNames ) for item in sublist]
 plt.legend( yearNames, loc='lower left' )
+plt.show()
 
 # <markdowncell>
 
@@ -106,6 +108,7 @@ yearNames = [os.path.split( filename )[1][12:16] for filename in fileList]
 # We plotted two lines per year... double the year list
 #yearNames = [item for sublist in zip( yearNames, yearNames ) for item in sublist]
 plt.legend( yearNames, loc='lower left' )
+plt.show()
 
 # <markdowncell>
 
@@ -125,4 +128,5 @@ for n, year in enumerate( np.arange( 1955, 2009 ) ):
     averageShortestPathLengths[n] = averageShortestPathLength( G )
     clusteringCoefficients[n] = clusteringCoefficient( G )
 plt.scatter( clusteringCoefficients, averageShortestPathLengths, c=np.arange( 2009-1955 ) )
+plt.show()
 
