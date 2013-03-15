@@ -88,6 +88,8 @@ for n, filename in enumerate( fileList ):
     rankFrequency, rankCounts, sortedMatrix = getRankFrequency( pitchVectors )
     # Compute a log-binned histogram of the counts
     hist, bins = np.histogram( np.log( rankCounts ), 25 )
+    # Normalize the histogram bins by bin width
+    hist = hist/np.diff( np.exp( bins ) )
     # Plot, shifted horizontally.
     plt.loglog( np.exp( bins[:-1] )*10**n, hist, '.' )
     # Fitting seems broken right now
