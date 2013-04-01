@@ -223,8 +223,6 @@ def quantize( matrix, quantiles ):
 
 # "Before discretization, pitch descriptions of each track are automatically transposed to an equivalent main tonality, such that all pitch codewords are considered within the same tonal context or key. For this process we employ a circular shift strategy, correlating (shifted) per-track averages to cognitively-inspired tonal pro
 # 
-# 
-# 
 # files."
 
 # <codecell>
@@ -377,7 +375,7 @@ def timbreZeroToDb( loudnessValues ):
 
 # <codecell>
 
-# Create the data subset - this also only needs to be run once!!!!
+# Create the data subset - this only needs to be run once!
 if __name__ == "__main__":
     # Generate the file list - this only needs to be run once.
     if not os.path.isfile( paths.fileListName ):
@@ -389,23 +387,23 @@ if __name__ == "__main__":
         timbreSample = getTimbreSample( fullFileList, yearToFileMapping )
         np.save( os.path.join( paths.subsamplePath, 'timbreSample.npy' ), timbreSample )
     timbreSample = np.load( os.path.join( paths.subsamplePath, 'timbreSample.npy' ) )
-    # They perform the random sampling 10 times!
-    for seed in np.arange( 10 ):
+    # They perform the random sampling 10 times!  Just do one random sampling so it doesn't take days an days.
+    for seed in np.arange( 1 ):
         for year in np.arange( 1955, 2009 ):
             fileList = getFilenamesForYearRange( fullFileList, yearToFileMapping, np.arange(year - 2, year + 3) )
             pitchVectors, timbreVectors, loudnessValues, trackIndices = getRandomSubsample( fileList, year, seed=seed )
             # Shift and quantize (simple binary threshold) the pitch vectors
             shiftedPitchVectors = shiftPitchVectors( pitchVectors, trackIndices )
             quantizedShiftedPitchVectors = quantize( shiftedPitchVectors, [.5] )
-            np.save( os.path.join( paths.subsamplePath, 'msd-pitches-' + str( year ) + '-' + str( seed ) + '.npy'), quantizedShiftedPitchVectors )
+            np.save( os.path.join( paths.subsamplePath, 'msd-pitches-' + str( year ) + '-' + str( seed ) + '.npy' ), quantizedShiftedPitchVectors )
             # Quantize to quantiles
             timbreQuantiles = getQuantiles( timbreSample, [.33, .66] )
             quantizedTimbreVectors = quantize( timbreVectors, timbreQuantiles )
-            np.save( os.path.join( paths.subsamplePath, 'msd-timbre-' + str( year ) + '-' + str( seed ) + '.npy', quantizedTimbreVectors )
+            np.save( os.path.join( paths.subsamplePath, 'msd-timbre-' + str( year ) + '-' + str( seed ) + '.npy' ), quantizedTimbreVectors )
             # Convert timbre coefficient zero to dB values in [0, 60] and quantize them
             loudnessValues = timbreZeroToDb( loudnessValues )
             quantizedLoudnessValues = quantize( loudnessValues, np.linspace( -59.8, -.2, 299 ) )
-            np.save( os.path.join( paths.subsamplePath, 'msd-loudness-' + str( year ) + '-' + str( seed ) + '.npy', quantizedLoudnessValues )
+            np.save( os.path.join( paths.subsamplePath, 'msd-loudness-' + str( year ) + '-' + str( seed ) + '.npy' ), quantizedLoudnessValues )
             # Also save the track indices
-            np.save( os.path.join( paths.subsamplePath, 'msd-trackIndices-' + str( year ) + '-' + str( seed ) + '.npy', trackIndices )
+            np.save( os.path.join( paths.subsamplePath, 'msd-trackIndices-' + str( year ) + '-' + str( seed ) + '.npy' ), trackIndices )
 

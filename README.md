@@ -17,13 +17,13 @@ Python and its packages can be installed easily with a package manager, for exam
 
 You also need to edit paths.py such that the variables point to actual locations accessible by Python.  Specifically, you need to list where the MSD dataset lives, where the file tracks_per_year.txt lives (should be included with the MSD), and valid locations to save some files.
 
-Once you've edited paths.py, you can run test.py to verify that everything will run correctly.  From your shell of choice, runv
+Once you've edited paths.py, you can run test.py to verify that everything will run correctly.  From your shell of choice, run
 
 python test.py
 
 It will complain if any packages are missing or if any of the paths you specified don't exist.  This file is imported by all other files so you will not be able to run anything until test.py runs without complaining.  If tests.py runs without printing any messages (and returns an exit code 0), you are all set to go.
 
-Once test.py runs without issue, you need to create the subsampling of the dataset they use in the paper.  To do so you can run
+Once test.py runs without issue, you need to create the subsampling of the dataset they use in the paper (this will take a very very long time).  To do so you can run
 
 python createDatasets.py
 
