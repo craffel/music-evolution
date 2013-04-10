@@ -33,6 +33,8 @@ Once you've created the subsampling, you can reproduce the figures in the paper 
 
 python makeFigures.py
 
+Some of the figures may take a very very very long time to appear (particularly the first time you run).  I recommend letting it run overnight.
+
 In general, I suggest running these files using IPython (get it here http://ipython.org/ or with your package manager).  I also recommend reading the comments in each file - particularly those in Markdown cells.  They describe what each part of the code is doing and trying to reproduce from the original paper.
 
 If you have any issues, please feel free to contact me at craffel (at) (google's mail service)
