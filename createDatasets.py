@@ -223,6 +223,7 @@ def quantize( matrix, quantiles ):
 # <markdowncell>
 
 # "Before discretization, pitch descriptions of each track are automatically transposed to an equivalent main tonality, such that all pitch codewords are considered within the same tonal context or key. For this process we employ a circular shift strategy, correlating (shifted) per-track averages to cognitively-inspired tonal pro
+# 
 # files."
 
 # <codecell>
@@ -392,6 +393,7 @@ if __name__ == "__main__":
     if len( sys.argv ) > 1:
         seed = int( sys.argv[1] )
     for year in np.arange( 1955, 2009 ):
+        print "Creating subsampling for year {}...".format( year )
         fileList = getFilenamesForYearRange( fullFileList, yearToFileMapping, np.arange(year - 2, year + 3) )
         pitchVectors, timbreVectors, loudnessValues, trackIndices = getRandomSubsample( fileList, year, seed=seed )
         # Shift and quantize (simple binary threshold) the pitch vectors
