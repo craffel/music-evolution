@@ -34,15 +34,15 @@ def computeShiftedDiscretePowerLaw( beta, c, zmin, z ):
 
 # Given $P(z | \theta) = \frac{(c+z)^{-\beta }}{\zeta[\beta ,c+z_{\text{min}}]}$ where $\theta = \{\beta, c, z_{\text{min}}\}$ we want to maximize the log likelihood over all $N_m$ samples of the random variable $z$ that we have.
 # 
-# Define the log likelihood as $\mathcal{L}(\beta, c, z_{min}) = \frac{1}{N_m} \sum_{i = 1}^{N_m} L$ where $L = \log P(z_i | \theta) = -B\log[c + z] - \log[\zeta[\beta ,c+z_{\text{min}}]]$.
+# Define the log likelihood as $\mathcal{L}(\beta, c, z_{min}) = \frac{1}{N_m} \sum_{i = 1}^{N_m} L$ where $L = \log P(z_i | \theta) = -\beta\log[c + z] - \log[\zeta[\beta ,c+z_{\text{min}}]]$.
 # 
 # Taking partial derivatives, we have 
 # 
-# $\frac{\delta L}{\delta c} = -\frac{\beta}{c + z} + \frac{\beta \zeta[1 + \beta, c + z_{\text{min}}]}{\zeta[\beta, c + z_{\text{min}}] }$
+# $\frac{\partial L}{\partial c} = -\frac{\beta}{c + z} + \frac{\beta \zeta[1 + \beta, c + z_{\text{min}}]}{\zeta[\beta, c + z_{\text{min}}] }$
 # 
-# $\frac{\delta L}{\delta z_{\text{min}}} = \frac{\beta  \zeta[1+\beta ,c+z_{\text{min}}]}{\zeta[\beta ,c+z_{\text{min}}]}$
+# $\frac{\partial L}{\partial z_{\text{min}}} = \frac{\beta  \zeta[1+\beta ,c+z_{\text{min}}]}{\zeta[\beta ,c+z_{\text{min}}]}$
 # 
-# $\frac{\delta L}{\delta \beta} = -\log[c+z]-\frac{\zeta^\prime[\beta ,c+z_{\text{min}}]}{\zeta[\beta ,c+z_{\text{min}}]}$
+# $\frac{\partial L}{\partial \beta} = -\log[c+z]-\frac{\zeta^\prime[\beta ,c+z_{\text{min}}]}{\zeta[\beta ,c+z_{\text{min}}]}$
 # 
 # Note that the derivative of the Hurwitz Zeta function with respect to its first argument (here $\beta$) is not defined, so we need to use the approximation (Clauset et al B.15)
 # 
@@ -99,6 +99,6 @@ def fitShiftedDiscretePowerLaw( z ):
         return -np.mean( logProbabilities )
     
     # Optimize the negative log likelihood
-    thetaBest, _, _ = scipy.optimize.fmin_l_bfgs_b( negativeLogLikelihood, np.array( [2.0, 70.0, 20.0] ), bounds=[(2.0, None), (0.0, None), (np.min( z ), np.max( z ))], iprint=1 )
+    thetaBest, _, _ = scipy.optimize.fmin_l_bfgs_b( negativeLogLikelihood, np.array( [2.0, 70.0, 20.0] ), bounds=[(2.0, None), (0.0, None), (np.min( z ), np.max( z ))] )
     return thetaBest[0], thetaBest[1], thetaBest[2]
 
