@@ -76,3 +76,9 @@ if not os.path.exists( os.path.split( paths.yearToFileMappingName )[0] ):
     print "The directory of the yearToFileMappingName you specified in paths.py doesn't exist, so the file will not be able to be created.  Please create it or edit paths.py and try again."
     sys.exit(1)
 
+# <codecell>
+
+# Simple way to actually print a diagnostic message if the script runs OK
+if __name__ == "__main__":
+    print "All tests passed OK!"
+
