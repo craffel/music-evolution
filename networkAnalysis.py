@@ -10,6 +10,7 @@ import numpy as np
 import tempfile
 import os
 import matplotlib.pyplot as plt
+import paths
 
 # <markdowncell>
 
@@ -37,13 +38,14 @@ def packValues( matrix ):
 
 # <codecell>
 
-def createGraph( codewordVector, trackIndices ):
+def createGraph( codewordVector, trackIndices, filename=None ):
     """
     Given a vector whose entries are indices of codewords, construct a weighted undirected graph
     
     Input:
         codewordVector - vector of codeword indices
         trackIndices - indices in the matrix where a track starts/ends
+        filename - where to save the .graphml file; default None which doesn't save a file
     Output:
         g - a weighted undirected graph
     """
@@ -69,11 +71,15 @@ def createGraph( codewordVector, trackIndices ):
             else:
                 G.add_edge( start, end, {'weight':1} )
     # Embarrassingly, this is the fastest way to do this I can figure out.
-    fd, tempFilename = tempfile.mkstemp()
-    nx.write_gml( G, tempFilename )
-    g = igraph.Graph.Read_GML( tempFilename )
-    os.close( fd )
-    os.remove( tempFilename )
+    if filename is None:
+        fd, tempFilename = tempfile.mkstemp()
+        nx.write_graphml( G, tempFilename )
+        g = igraph.Graph.Read_GraphML( tempFilename )
+        os.close( fd )
+        os.remove( tempFilename )
+    else:
+        nx.write_graphml( G, filename )
+        g = igraph.Graph.Read_GraphML( filename )
     return g
 
 # <markdowncell>
@@ -91,8 +97,9 @@ def averageShortestPathLength( g ):
     Output:
         averageShortestPathLength - ...
     """
-    shortestPathLengths = g.shortest_paths( weights='weight' )
-    return np.mean( shortestPathLengths )
+    shortestPathLengths = np.array( g.shortest_paths( weights='weight' ) ).flatten()
+    # This will return inf if there is no path
+    return np.ma.masked_invalid( shortestPathLengths ).mean()
 
 # <markdowncell>
 
@@ -111,6 +118,68 @@ def clusteringCoefficient( g ):
     """
     localTransitivity = np.array( g.transitivity_local_undirected( weights='weight' ) )
     # Sometimes this returns NaNs!
-    localTransitivity = np.delete( localTransitivity, np.nonzero( np.isnan(localTransitivity) )[0] )
-    return np.mean( localTransitivity )
+    return np.ma.masked_invalid( localTransitivity ).mean()
+
+# <markdowncell>
+
+# "A link accounting for a fraction of the total node's strength is considered relevant if the probability of observing such a value under the null model is smaller than $\alpha$, where $1 - \alpha$ is the confidence level."
+
+# <codecell>
+
+def disparityFilter( G, alpha=0.01 ):
+    '''
+    Applies the "disparity filter" to a graph.
+    
+    Input:
+        g - graph to process
+        alpha - alpha confidence parameter, default = .01
+    Output:
+        g - processed graph
+    '''
+    g = G.copy()
+    # A link of weight wij...
+    wij = np.array( g.es['weight'] )
+    # attached to two nodes of degrees ki and kj...
+    ki = np.array( g.degree( [e.source for e in g.es] ) )
+    kj = np.array( g.degree( [e.target for e in g.es] ) )
+    # and strengths si and sj...
+    si = np.array( g.strength( [e.source for e in g.es], weights='weight' ) )
+    sj = np.array( g.strength( [e.target for e in g.es], weights='weight' ) )
+    # will be preserved iff (below is integral solved)
+    relevancei = np.power( (1 - wij/si), ki - 1 )
+    # or 
+    relevancej = np.power( (1 - wij/sj), kj - 1 )
+    # is less than alpha
+    edgesToDelete = np.flatnonzero( np.logical_and( relevancei > alpha, relevancej > alpha ) )
+    g.delete_edges( list( edgesToDelete ) )
+    return g
+
+# <codecell>
+
+def loadGraph( f ):
+    '''
+    Loads in a .graphml file using igraph.
+
+    Input:
+        f - filename or handle
+    output:
+        g - graph
+    '''
+    return igraph.Graph.Read_GraphML( f )
+
+# <codecell>
+
+# Create the .graphml files if run as a script
+if __name__ == "__main__":
+    # Cheap parallelization
+    import sys
+    seed = 0
+    if len( sys.argv ) > 1:
+        seed = int( sys.argv[1] )
+    # Load in pitch vectors for each year
+    for n, year in enumerate( np.arange( 1980, 2009 ) ):
+            pitchVectors = np.load( os.path.join( paths.subsamplePath, 'msd-pitches-{}-{}.npy'.format( year, seed ) ) )
+            trackIndices = np.load( os.path.join( paths.subsamplePath, 'msd-trackIndices-{}-{}.npy'.format( year, seed ) ) )
+            # Create network
+            G = createGraph( packValues( pitchVectors ), trackIndices, os.path.join( paths.graphmlPath, 'pitches-{}-{}.graphml'.format( year, seed ) ) )
 

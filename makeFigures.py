@@ -15,6 +15,7 @@ from networkAnalysis import *
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+import igraph
 
 # <markdowncell>
 
@@ -117,16 +118,44 @@ plt.show()
 # <codecell>
 
 # The variables we'll be computing
-averageShortestPathLengths = np.zeros( 2009 - 1955 )
-clusteringCoefficients = np.zeros( 2009 - 1955 )
+averageShortestPathLengths = np.zeros( (10, 2009 - 1955) )
+clusteringCoefficients = np.zeros( (10, 2009 - 1955) )
 # Load in pitch vectors for each year
 for n, year in enumerate( np.arange( 1955, 2009 ) ):
-    pitchVectors = np.load( os.path.join( paths.subsamplePath, 'msd-pitches-' + str(year) + '-0.npy' ) )
-    trackIndices = np.load( os.path.join( paths.subsamplePath, 'msd-trackIndices-' + str(year) + '-0.npy' ) )
-    # Create network
-    G = createGraph( packValues( pitchVectors ), trackIndices )
-    averageShortestPathLengths[n] = averageShortestPathLength( G )
-    clusteringCoefficients[n] = clusteringCoefficient( G )
-plt.scatter( clusteringCoefficients, averageShortestPathLengths, c=np.arange( 2009-1955 ) )
+    for seed in np.arange( 10 ):
+        with open( os.path.join( paths.graphmlPath, 'pitches-{}-{}.graphml'.format( year, seed ) ), 'r' ) as f:
+            # Read in network
+            G = loadGraph( f )
+        # Perform filtering
+        G = disparityFilter( G )
+        averageShortestPathLengths[seed, n] = averageShortestPathLength( G )
+        clusteringCoefficients[seed, n] = clusteringCoefficient( G )
+plt.scatter( clusteringCoefficients.flatten(), averageShortestPathLengths.flatten(), c=range( 2009-1955 )*10 )
 plt.show()
+
+# <markdowncell>
+
+# "Scattered plot of the strength vs. degree in the original pitch network without any fi
+# 
+# 
+# 
+# ltering procedure applied."
+
+# <codecell>
+
+# Year is fixed at 1992 I believe
+year = 1992
+# Create the graph
+pitchVectors = np.load( os.path.join( paths.subsamplePath, 'msd-pitches-' + str(year) + '-0.npy' ) )
+trackIndices = np.load( os.path.join( paths.subsamplePath, 'msd-trackIndices-' + str(year) + '-0.npy' ) )
+G = createGraph( packValues( pitchVectors ), trackIndices )
+plt.figure( figsize=(8, 8) )
+ax = plt.subplot( 111 )
+# Plot strength vs. degree with guideline
+ax.scatter( np.array( G.degree( G.vs ) ), np.array( G.strength( G.vs, weights='weight' ) ), c='r', linewidths=0 )
+plt.plot( np.arange( 3e3 ), 'k', linewidth=3 )
+# Set limits to match
+plt.axis( [1, 3e3, 1, 2e5] )
+ax.set_xscale('log')
+ax.set_yscale('log')
 
