@@ -20,11 +20,6 @@ except:
     print "Failed to import base Python modules - is there something wrong with your Python install?  Are you using Python 2.7?"
     sys.exit(1)
 try:
-    import networkx as nx
-except:
-    print "networkx not installed.  Please install from http://networkx.github.com/"
-    sys.exit(1)
-try:
     import numpy as np
 except:
     print "numpy not installed.  Please install from http://www.numpy.org/"

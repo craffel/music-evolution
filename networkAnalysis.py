@@ -5,7 +5,6 @@
 
 import test
 import igraph
-import networkx as nx
 import numpy as np
 import tempfile
 import os
@@ -49,37 +48,26 @@ def createGraph( codewordVector, trackIndices, filename=None ):
     Output:
         g - a weighted undirected graph
     """
-    # nx.Graph is the undirected graph class
-    G = nx.Graph()
+    edges = []
     # Grab each track
     for trackStart, trackEnd in zip( trackIndices, np.append( trackIndices[1:], codewordVector.shape[0] ) ):
         trackVector = codewordVector[trackStart:trackEnd]
-        # Iterate over codewords
-        for start, end in zip( trackVector[:-1], trackVector[1:] ):
-            # Don't store self-links
-            if start == end:
-                continue
-            # Make sure all links go from smaller to larger number - this will effectively sum up weights for the undirected graph.
-            elif start > end:
-                temp = start
-                start = end
-                end = temp
-            # If we already have this edge, just add to its weight
-            if G.has_edge( start, end ):
-                G[start][end]['weight'] += 1
-            # If we don't have it, add it
-            else:
-                G.add_edge( start, end, {'weight':1} )
-    # Embarrassingly, this is the fastest way to do this I can figure out.
-    if filename is None:
-        fd, tempFilename = tempfile.mkstemp()
-        nx.write_graphml( G, tempFilename )
-        g = igraph.Graph.Read_GraphML( tempFilename )
-        os.close( fd )
-        os.remove( tempFilename )
-    else:
-        nx.write_graphml( G, filename )
-        g = igraph.Graph.Read_GraphML( filename )
+        # Remove self-links
+        trackVector = trackVector[np.diff( trackVector ) != 0]
+        # Add in edge list
+        edges += zip( trackVector[:-1], trackVector[1:] )
+    edgeAttributes = {}
+    edgeAttributes['weight'] = np.ones( len( edges ) )
+    # Create graph
+    g = igraph.Graph( n=np.max( trackVector ) + 1, edges=edges, edge_attrs=edgeAttributes )
+    # Turn parallel edges into weights
+    g.simplify( combine_edges='sum' )
+    # Delete unconnected vertices
+    g.delete_vertices( np.flatnonzero( np.array( g.degree() ) == 0 ) )
+    # Write out?
+    if filename is not None:
+        with open( filename, 'wb' ) as f:
+            g.write_graphml( f )
     return g
 
 # <markdowncell>
@@ -152,6 +140,8 @@ def disparityFilter( G, alpha=0.01 ):
     # is less than alpha
     edgesToDelete = np.flatnonzero( np.logical_and( relevancei > alpha, relevancej > alpha ) )
     g.delete_edges( list( edgesToDelete ) )
+    # Delete unused vertices
+    g.delete_vertices( np.flatnonzero( np.array( g.degree() ) == 0 ) )
     return g
 
 # <codecell>
@@ -171,13 +161,10 @@ def loadGraph( f ):
 
 # Create the .graphml files if run as a script
 if __name__ == "__main__":
-    # Cheap parallelization
-    import sys
-    seed = 0
-    if len( sys.argv ) > 1:
-        seed = int( sys.argv[1] )
     # Load in pitch vectors for each year
-    for n, year in enumerate( np.arange( 1980, 2009 ) ):
+    for n, year in enumerate( np.arange( 1955, 2009 ) ):
+        print "Writing graphs for year {}".format( year )
+        for seed in np.arange( 10 ):
             pitchVectors = np.load( os.path.join( paths.subsamplePath, 'msd-pitches-{}-{}.npy'.format( year, seed ) ) )
             trackIndices = np.load( os.path.join( paths.subsamplePath, 'msd-trackIndices-{}-{}.npy'.format( year, seed ) ) )
             # Create network

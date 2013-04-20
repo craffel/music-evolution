@@ -7,7 +7,6 @@ To run, you need the following:
 
 - Python 2.7 (may work with earlier or later versions of Python)
   http://python.org/
-- Networkx http://networkx.github.com/
 - Numpy http://www.numpy.org/
 - Matplotlib http://matplotlib.org/
 - Pytables http://www.pytables.org/moin
