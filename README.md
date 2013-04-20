@@ -56,19 +56,9 @@ you can run
 for i in {0..9}; do python createDatasets.py $i; done;
 
 Once the subsampled datasets have all been saved, you need to create the
-.graphml files for the networks (this speeds up loading the graphs a lot).  As
-above, this needs to be done for each seed from 0 to 9:
+.graphml files for the networks (this speeds up loading the graphs).  Run
 
-python networkAnalysis.py 0
-python networkAnalysis.py 1
-python networkAnalysis.py 2
-...
-python networkAnalysis.py 9
-
-Again, you can run these commands in separate shell instances for cheap
-parallelization or you can run them sequentially with the command
-
-for i in {0..9}; do python networkAnalysis.py $i; done;
+python networkAnalysis.py
 
 Once you've created the subsampling and the .graphml files, you can reproduce
 the figures in the paper by running 
