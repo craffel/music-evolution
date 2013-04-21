@@ -117,6 +117,7 @@ plt.show()
 
 # <codecell>
 
+%%prun
 # The variables we'll be computing
 averageShortestPathLengths = np.zeros( (10, 2009 - 1955) )
 clusteringCoefficients = np.zeros( (10, 2009 - 1955) )
@@ -126,20 +127,21 @@ for n, year in enumerate( np.arange( 1955, 2009 ) ):
         with open( os.path.join( paths.graphmlPath, 'pitches-{}-{}.graphml'.format( year, seed ) ), 'r' ) as f:
             # Read in network
             G = loadGraph( f )
-        # Perform filtering
+        # Perform filtering - Should do this when creating .graphml files!
         G = disparityFilter( G )
+        # Remove top 10 links
+        removeTopNodes( G )
         averageShortestPathLengths[seed, n] = averageShortestPathLength( G )
         clusteringCoefficients[seed, n] = clusteringCoefficient( G )
 plt.scatter( clusteringCoefficients.flatten(), averageShortestPathLengths.flatten(), c=range( 2009-1955 )*10 )
+cbar = plt.colorbar()
+cbar.set_ticks( np.arange( 0, 2009-1955, 5 ) )
+cbar.set_ticklabels( 1955 + np.arange( 0, 2009-1955, 5 ) )
 plt.show()
 
 # <markdowncell>
 
-# "Scattered plot of the strength vs. degree in the original pitch network without any fi
-# 
-# 
-# 
-# ltering procedure applied."
+# "Scattered plot of the strength vs. degree in the original pitch network without any filtering procedure applied."
 
 # <codecell>
 

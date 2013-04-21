@@ -57,9 +57,9 @@ def createGraph( codewordVector, trackIndices, filename=None ):
         # Add in edge list
         edges += zip( trackVector[:-1], trackVector[1:] )
     edgeAttributes = {}
-    edgeAttributes['weight'] = np.ones( len( edges ) )
+    edgeAttributes['weight'] = [1]*len( edges )
     # Create graph
-    g = igraph.Graph( n=np.max( trackVector ) + 1, edges=edges, edge_attrs=edgeAttributes )
+    g = igraph.Graph( n=np.max( codewordVector ) + 1, edges=edges, edge_attrs=edgeAttributes )
     # Turn parallel edges into weights
     g.simplify( combine_edges='sum' )
     # Delete unconnected vertices
@@ -143,6 +143,24 @@ def disparityFilter( G, alpha=0.01 ):
     # Delete unused vertices
     g.delete_vertices( np.flatnonzero( np.array( g.degree() ) == 0 ) )
     return g
+
+# <markdowncell>
+
+# "To distinguish real trends from effects purely induced by heterogeneity, we remove the 10 most connected nodes in the original network."
+
+# <codecell>
+
+def removeTopNodes( g, n=10 ):
+    '''
+    Removes the n most connected nodes in a graph.
+    
+    Input:
+        g - graph to process - processed in place!
+        n - number of nodes to remove
+    '''
+    # Get the n nodes with highest degree
+    topNodes = np.argsort( g.degree() )[-n:]
+    g.delete_vertices( topNodes )
 
 # <codecell>
 
