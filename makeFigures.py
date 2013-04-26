@@ -121,22 +121,29 @@ plt.show()
 # The variables we'll be computing
 averageShortestPathLengths = np.zeros( (10, 2009 - 1955) )
 clusteringCoefficients = np.zeros( (10, 2009 - 1955) )
+randomizedAverageShortestPathLengths = np.zeros( (10, 2009 - 1955) )
+randomizedClusteringCoefficients = np.zeros( (10, 2009 - 1955) )
 # Load in pitch vectors for each year
 for n, year in enumerate( np.arange( 1955, 2009 ) ):
-    for seed in np.arange( 10 ):
+    for seed in np.arange( 1 ):
         with open( os.path.join( paths.graphmlPath, 'pitches-{}-{}.graphml'.format( year, seed ) ), 'r' ) as f:
             # Read in network
             G = loadGraph( f )
-        # Perform filtering - Should do this when creating .graphml files!
-        G = disparityFilter( G )
         # Remove top 10 links
         removeTopNodes( G )
         averageShortestPathLengths[seed, n] = averageShortestPathLength( G )
         clusteringCoefficients[seed, n] = clusteringCoefficient( G )
+        # Randomly swap pairs of links
+        G = randomizeNetwork( G )
+        randomizedAverageShortestPathLengths[seed, n] = averageShortestPathLength( G )
+        randomizedClusteringCoefficients[seed, n] = clusteringCoefficient( G )
+plt.figure( figsize=(8, 8) )
 plt.scatter( clusteringCoefficients.flatten(), averageShortestPathLengths.flatten(), c=range( 2009-1955 )*10 )
+plt.scatter( randomizedClusteringCoefficients.flatten(), randomizedAverageShortestPathLengths.flatten(), c=range( 2009-1955 )*10, marker='s' )
 cbar = plt.colorbar()
 cbar.set_ticks( np.arange( 0, 2009-1955, 5 ) )
 cbar.set_ticklabels( 1955 + np.arange( 0, 2009-1955, 5 ) )
+plt.axis( [0.1, 0.7, 35, 55] )
 plt.show()
 
 # <markdowncell>
