@@ -110,9 +110,7 @@ def averageShortestPathLength( g ):
     Output:
         averageShortestPathLength - ...
     """
-    shortestPathLengths = np.array( g.shortest_paths( weights='weight' ) ).flatten()
-    # This will return inf if there is no path
-    return np.ma.masked_invalid( shortestPathLengths ).mean()
+    return g.average_path_length()
 
 # <markdowncell>
 
@@ -129,9 +127,7 @@ def clusteringCoefficient( g ):
     Output:
         clusteringCoefficient - ...
     """
-    localTransitivity = np.array( g.transitivity_local_undirected( weights='weight' ) )
-    # Sometimes this returns NaNs!
-    return np.ma.masked_invalid( localTransitivity ).mean()
+    return g.transitivity_avglocal_undirected()
 
 # <markdowncell>
 
@@ -179,34 +175,143 @@ def disparityFilter( G, alpha=0.01 ):
 
 # <codecell>
 
-def randomizeNetwork( g ):
+def randomizeNetwork( g, nSteps=None ):
     '''
-    Randomly swaps pairs of link in a network - does it in place.
+    Randomly swaps pairs of link in a network.  Based on http://www.cmth.bnl.gov/~maslov/sym_generate_srand.m
+    *** Removes weight information! ***
     
     Input:
-        g - graph to process
+        g - igraph graph object
+        nSteps - number of rewiring steps (default 4*nEdges)
+    Output: 
+        g - randomized graph with no weight information
     '''
-    nEdges = len( g.es )
-    edges = np.zeros( (nEdges, 2), dtype=np.int )
-    edges[:, 0] = [e.source for e in g.es]
-    edges[:, 1] = [e.target for e in g.es]
-    for n, edge in enumerate( edges ):
-        randomIndex = np.random.randint( 0, nEdges )
-        randomEdge = edges[randomIndex]
-        newEdge1 = [edge[0], randomEdge[1]]
-        newEdge2 = [randomEdge[0], edge[1]]
-        if (edges == newEdge1).all( axis = 1 ).any() \
-        or (edges == newEdge2).all( axis = 1 ).any() \
-        or newEdge1[0] == newEdge1[1] \
-        or newEdge2[0] == newEdge2[1]:
-            continue
-        edges[n] = newEdge1
-        edges[randomIndex] = newEdge2
+    # Set up parameters according to the variable names used in the .m file
+    s1 = np.array( g.get_adjacency().data, dtype=np.bool )
+    ntry = nSteps
+    
+    #function srand=sym_generate_srand(s1,ntry)
+    #% Syntax: 
+    #% srand=sym_generate_srand(s1)
+    #% s1 - the adjacency matrix of an undirected network  
+    #% ntry - (optional) the number of rewiring steps. If none is given ntry=4*(# of edges in the network)
+    #% Output: srand - the adjacency matrix of a randomized network with the same set of in- and out-degrees as the original one 
+    
+    #nrew=0;
+    nrew = 0
+    #srand=s1;
+    srand = s1
+    #[i_srand,j_srand]=find(srand);
+    i_srand, j_srand = np.nonzero( srand )
+    #aux=find(i_srand>j_srand);
+    aux = np.flatnonzero( i_srand > j_srand )
+    #i_srand=i_srand(aux);
+    i_srand = i_srand[aux]
+    #j_srand=j_srand(aux);
+    j_srand = j_srand[aux]
+    #Ne=length(i_srand);
+    Ne = i_srand.shape[0]
+    
+    #if (nargin < 2) ntry=4*Ne; end;
+    if ntry is None:
+        ntry = 4*Ne
+    
+    #for i=1:ntry
+    for i in xrange( ntry ):
+        #e1=1+floor(Ne*rand);
+        e1 = np.random.randint( 0, Ne )
+        #e2=1+floor(Ne*rand);
+        e2 = np.random.randint( 0, Ne )
+        #v1=i_srand(e1);
+        v1 = i_srand[e1]
+        #v2=j_srand(e1);
+        v2 = j_srand[e1]
+        #v3=i_srand(e2);
+        v3 = i_srand[e2]
+        #v4=j_srand(e2);
+        v4 = j_srand[e2]
+        #if (v1~=v3)&(v1~=v4)&(v2~=v4)&(v2~=v3);
+        if v1 != v3 and v1 != v4 and v2 != v4 and v2 != v3:
+            #if rand>0.5;
+            if np.random.rand() > .5:
+                #if (srand(v1,v3)==0)&(srand(v2,v4)==0);
+                if srand[v1, v3] == 0 and srand[v2, v4] == 0:
+                    #srand(v1,v2)=0;
+                    srand[v1, v2] = 0
+                    #srand(v3,v4)=0;
+                    srand[v3, v4] = 0
+                    #srand(v2,v1)=0;
+                    srand[v2, v1] = 0
+                    #srand(v4,v3)=0; 
+                    srand[v4, v3] = 0
+                    #srand(v1,v3)=1;
+                    srand[v1, v3] = 1
+                    #srand(v2,v4)=1;
+                    srand[v2, v4] = 1
+                    #srand(v3,v1)=1;
+                    srand[v3, v1] = 1
+                    #srand(v4,v2)=1;    
+                    srand[v4, v2] = 1
+                    #nrew=nrew+1;
+                    nrew = nrew + 1
+                    #i_srand(e1)=v1;
+                    i_srand[e1] = v1
+                    #j_srand(e1)=v3;
+                    j_srand[e1] = v3
+                    #i_srand(e2)=v2;
+                    i_srand[e2] = v2
+                    #j_srand(e2)=v4;
+                    j_srand[e2] = v4
+                #end;
+            #else
+            else:
+                #v5=v3;
+                v5 = v3
+                #v3=v4;
+                v3 = v4
+                #v4=v5;
+                v4 = v5
+                #clear v5;
+                del v5
+                #if (srand(v1,v3)==0)&(srand(v2,v4)==0);
+                if srand[v1, v3] == 0 and srand[v2, v4] == 0:
+                    #srand(v1,v2)=0;
+                    srand[v1, v2] = 0
+                    #srand(v4,v3)=0;
+                    srand[v4, v3] = 0
+                    #srand(v2,v1)=0;
+                    srand[v2, v1] = 0
+                    #srand(v3,v4)=0; 
+                    srand[v3, v4] = 0
+                    #srand(v1,v3)=1;
+                    srand[v1, v3] = 1
+                    #srand(v2,v4)=1;
+                    srand[v2, v4] = 1
+                    #srand(v3,v1)=1;
+                    srand[v3, v1] = 1
+                    #srand(v4,v2)=1; 
+                    srand[v4, v2] = 1
+                    #nrew=nrew+1;
+                    nrew = nrew + 1
+                    #i_srand(e1)=v1;
+                    i_srand[e1] = v1
+                    #j_srand(e1)=v3;
+                    j_srand[e1] = v3
+                    #i_srand(e2)=v2;
+                    i_srand[e2] = v2
+                    #j_srand(e2)=v4;
+                    j_srand[e2] = v4
+                #end;         
+            #end;
+        #end;
+    #end;
+    
+    # Convert from sparse adjacency matrix back to igraph format
+    return igraph.Graph.Adjacency( srand.tolist(), mode=igraph.ADJ_LOWER )
 
-    edgeAttributes = {}
-    edgeAttributes['weight'] = g.es['weight']
-    g = igraph.Graph( n=len( g.vs ), edges=edges.tolist(), edge_attrs=edgeAttributes )
-    return g
+# <codecell>
+
+#%prun randomizeNetwork( g )
 
 # <codecell>
 
