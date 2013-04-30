@@ -309,9 +309,13 @@ def randomizeNetworkMaslov( g, nSteps=None ):
     # Convert from sparse adjacency matrix back to igraph format
     return igraph.Graph.Adjacency( srand.tolist(), mode=igraph.ADJ_LOWER )
 
+# <markdowncell>
+
+# Code from Joan Serra for computing the randomized network (described above), translated to for use with igraph.  The parameter randomizeOrder is added to optionally try to match Maslov's code, so that you randomly either join A-C, B-D or A-D, B-C.
+
 # <codecell>
 
-def randomizeNetwork( g, nSteps=None ):
+def randomizeNetwork( g, **kwargs ):
     '''
     Randomly swaps pairs of link in a network.  Based on Joan Serra's code.
     *** Removes weight information! ***
@@ -319,55 +323,61 @@ def randomizeNetwork( g, nSteps=None ):
     Input:
         g - igraph graph object
         nSteps - number of rewiring steps (default 4*nEdges)
+        randomizeOrder - randomize whether to link A-C, B-D, or A-D, B-C, as in Maslov's code (default False)
     Output: 
         g - randomized graph with no weight information
     '''
+    
+    r = kwargs.get( 'nSteps', 4*len( g.es ) )
+    randomizeOrder = kwargs.get( 'randomizeOrder', False )
+    
     # Get the adjacency dictionary
     adj = {}
     for node in g.vs:
         adj[node.index] = g.neighbors( node.index )
     nNodes = len( g.vs )
     
-    if nSteps is None:
-        r = 4*len( g.es )
-    else:
-        r = nSteps
-
-    #linkednodes = G.adj.keys()
-
-    #while r>0:
+    # Perform nSteps swappings
     while r > 0:
-        #i=random.choice(linkednodes)
+        # Choose a random start node A
         i = np.random.randint( nNodes )
-        #k=random.choice(linkednodes)
+        # Choose a random start node C
         k = np.random.randint( nNodes )
-        #if k in G.adj[i]: continue
+        # If A and C are neighbors, then skip
         if k in adj[i]:
             continue
-        #j=random.choice(G.adj[i].keys())
+        # Choose a random neighbor B of A
         j = adj[i][np.random.randint( len( adj[i] ) )]
-        #if k in G.adj[j]: continue
+        # If B is already a neighbor of C, skip
         if k in adj[j]:
             continue
-        #l=random.choice(G.adj[k].keys())
+        # Choose a random neighbor D of B
         l = adj[k][np.random.randint( len( adj[k] ) )]
-        #if l in G.adj[i] or l in G.adj[j]: continue
+        # If D is already a neighbor of A, or D is already a connection of B, skip
         if l in adj[i] or l in adj[j]:
             continue
-        #G.add_edge(i,k,weight=G[i][j]['weight'])
-        adj[i] += [k]
-        adj[k] += [i]
-        #G.add_edge(j,l,weight=G[k][l]['weight'])
-        adj[j] += [l]
-        adj[l] += [j]
-        #G.remove_edge(i,j)
+        if randomizeOrder and np.random.rand() > .5:
+            # Add a connection between A and D
+            adj[i] += [l]
+            adj[l] += [i]
+            # Add a connection between B and C
+            adj[j] += [k]
+            adj[k] += [j]
+        else:
+            # Add a connection between A and C
+            adj[i] += [k]
+            adj[k] += [i]
+            # Add a connection between B and D
+            adj[j] += [l]
+            adj[l] += [j]
+        # Remove the link from A to B
         del adj[i][adj[i].index( j )]
         del adj[j][adj[j].index( i )]
-        #G.remove_edge(k,l)
+        # Remove the link from C to D
         del adj[k][adj[k].index( l )]
         del adj[l][adj[l].index( k )]
-        #r-=1
         r -= 1
+    # Recreate adjacency matrix from adjacency list
     adjacencyMatrix = np.zeros( (nNodes, nNodes) )
     for node in adj:
         for connection in adj[node]:
