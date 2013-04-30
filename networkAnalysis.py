@@ -386,18 +386,6 @@ def randomizeNetwork( g, **kwargs ):
 
 # <codecell>
 
-'''year = 1992
-seed = 0
-with open( os.path.join( paths.graphmlPath, 'pitches-{}-{}.graphml'.format( year, seed ) ), 'r' ) as f:
-    # Read in network
-    g = loadGraph( f )
-# Remove top 10 links
-removeTopNodes( g )
-
-%prun randomizeNetwork( g )'''
-
-# <codecell>
-
 def plotGraph( g, filename ):
     '''
     Saves a picture of a network (even though they are hard to plot) 
