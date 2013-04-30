@@ -175,7 +175,7 @@ def disparityFilter( G, alpha=0.01 ):
 
 # <codecell>
 
-def randomizeNetwork( g, nSteps=None ):
+def randomizeNetworkMaslov( g, nSteps=None ):
     '''
     Randomly swaps pairs of link in a network.  Based on http://www.cmth.bnl.gov/~maslov/sym_generate_srand.m
     *** Removes weight information! ***
@@ -311,7 +311,53 @@ def randomizeNetwork( g, nSteps=None ):
 
 # <codecell>
 
-#%prun randomizeNetwork( g )
+def randomizeNetwork( g, nSteps=None ):
+    '''
+    Randomly swaps pairs of link in a network.  Based on Joan Serra's code.
+    
+    Input:
+        g - igraph graph object
+        nSteps - number of rewiring steps (default 4*nEdges)
+    Output: 
+        g - randomized graph with no weight information
+    '''
+    #r=RANDOM_NUM_XSWAPS*M
+    if nSteps is None:
+        r = 4*len( g.es )
+    else:
+        r = nSteps
+    #linkednodes = G.adj.keys()
+    linkednodes = [v.index for v in g.vs]
+    #while r>0:
+    while r > 0:
+        #i=random.choice(linkednodes)
+        i = linkednodes[np.random.randint( 0, len( linkednodes ) )]
+        #k=random.choice(linkednodes)
+        k = linkednodes[np.random.randint( 0, len( linkednodes ) )]
+        #if k in G.adj[i]: continue
+        if k in g.neighbors( i ):
+            continue
+        #j=random.choice(G.adj[i].keys())
+        j = np.random.choice( g.neighbors(i) )
+        #if k in G.adj[j]: continue
+        if k in g.neighbors( j ):
+            continue
+        #l=random.choice(G.adj[k].keys())
+        l = np.random.choice( g.neighbors(k) )
+        #if l in G.adj[i] or l in G.adj[j]: continue
+        if l in g.neighbors( i ) or l in g.neighbors( j ):
+            continue
+        #G.add_edge(i,k,weight=G[i][j]['weight'])
+        g.add_edge( i, k, weight=g.es[g.get_eid( i, j, 0 )]['weight'] )
+        #G.add_edge(j,l,weight=G[k][l]['weight'])
+        g.add_edge( j, l, weight=g.es[g.get_eid( k, l, 0 )]['weight'] )
+        #G.remove_edge(i,j)
+        g.delete_edges( g.get_eid( i, j, 0 ) )
+        #G.remove_edge(k,l)
+        g.delete_edges( g.get_eid( k, l, 0 ) )
+        #r-=1
+        r -= 1
+    return g
 
 # <codecell>
 
@@ -347,6 +393,8 @@ def removeTopNodes( g, n=10 ):
     # Get the n nodes with highest degree
     topNodes = np.argsort( g.degree() )[-n:]
     g.delete_vertices( topNodes )
+    # Delete unconnected vertices
+    g.delete_vertices( np.flatnonzero( np.array( g.degree() ) == 0 ) )
 
 # <codecell>
 
