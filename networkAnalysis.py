@@ -314,50 +314,77 @@ def randomizeNetworkMaslov( g, nSteps=None ):
 def randomizeNetwork( g, nSteps=None ):
     '''
     Randomly swaps pairs of link in a network.  Based on Joan Serra's code.
-    
+    *** Removes weight information! ***
+
     Input:
         g - igraph graph object
         nSteps - number of rewiring steps (default 4*nEdges)
     Output: 
         g - randomized graph with no weight information
     '''
-    #r=RANDOM_NUM_XSWAPS*M
+    # Get the adjacency dictionary
+    adj = {}
+    for node in g.vs:
+        adj[node.index] = g.neighbors( node.index )
+    nNodes = len( g.vs )
+    
     if nSteps is None:
         r = 4*len( g.es )
     else:
         r = nSteps
+
     #linkednodes = G.adj.keys()
-    linkednodes = [v.index for v in g.vs]
+
     #while r>0:
     while r > 0:
         #i=random.choice(linkednodes)
-        i = linkednodes[np.random.randint( 0, len( linkednodes ) )]
+        i = np.random.randint( nNodes )
         #k=random.choice(linkednodes)
-        k = linkednodes[np.random.randint( 0, len( linkednodes ) )]
+        k = np.random.randint( nNodes )
         #if k in G.adj[i]: continue
-        if k in g.neighbors( i ):
+        if k in adj[i]:
             continue
         #j=random.choice(G.adj[i].keys())
-        j = np.random.choice( g.neighbors(i) )
+        j = adj[i][np.random.randint( len( adj[i] ) )]
         #if k in G.adj[j]: continue
-        if k in g.neighbors( j ):
+        if k in adj[j]:
             continue
         #l=random.choice(G.adj[k].keys())
-        l = np.random.choice( g.neighbors(k) )
+        l = adj[k][np.random.randint( len( adj[k] ) )]
         #if l in G.adj[i] or l in G.adj[j]: continue
-        if l in g.neighbors( i ) or l in g.neighbors( j ):
+        if l in adj[i] or l in adj[j]:
             continue
         #G.add_edge(i,k,weight=G[i][j]['weight'])
-        g.add_edge( i, k, weight=g.es[g.get_eid( i, j, 0 )]['weight'] )
+        adj[i] += [k]
+        adj[k] += [i]
         #G.add_edge(j,l,weight=G[k][l]['weight'])
-        g.add_edge( j, l, weight=g.es[g.get_eid( k, l, 0 )]['weight'] )
+        adj[j] += [l]
+        adj[l] += [j]
         #G.remove_edge(i,j)
-        g.delete_edges( g.get_eid( i, j, 0 ) )
+        del adj[i][adj[i].index( j )]
+        del adj[j][adj[j].index( i )]
         #G.remove_edge(k,l)
-        g.delete_edges( g.get_eid( k, l, 0 ) )
+        del adj[k][adj[k].index( l )]
+        del adj[l][adj[l].index( k )]
         #r-=1
         r -= 1
-    return g
+    adjacencyMatrix = np.zeros( (nNodes, nNodes) )
+    for node in adj:
+        for connection in adj[node]:
+            adjacencyMatrix[node, connection] = 1
+    return igraph.Graph.Adjacency( adjacencyMatrix.tolist(), mode=igraph.ADJ_LOWER )
+
+# <codecell>
+
+'''year = 1992
+seed = 0
+with open( os.path.join( paths.graphmlPath, 'pitches-{}-{}.graphml'.format( year, seed ) ), 'r' ) as f:
+    # Read in network
+    g = loadGraph( f )
+# Remove top 10 links
+removeTopNodes( g )
+
+%prun randomizeNetwork( g )'''
 
 # <codecell>
 

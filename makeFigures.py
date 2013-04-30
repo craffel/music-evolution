@@ -96,15 +96,13 @@ for n, filename in enumerate( fileList ):
     # Plot, shifted horizontally.
     plt.loglog( np.exp( bins[:-1] )*10**n, hist, '.' )
     # Fitting seems broken right now
-    '''
     # Fit with power law
-    beta, c, zmin = fitShiftedDiscretePowerLaw( probabilities )
+    beta, c, zmin = fitShiftedDiscretePowerLaw( hist )
     # Get power law fit curve
-    probabilityCurve = computeShiftedDiscretePowerLaw( beta, c, zmin, np.sort( counts ) )
-    plt.loglog( np.sort( counts )*(10**n), probabilityCurve, 'k' )
-    '''
+    probabilityCurve = computeShiftedDiscretePowerLaw( beta, c, zmin, np.sort( np.exp( bins[:-1] ) ) )
+    plt.loglog( np.exp( bins[:-1] )*10**n, probabilityCurve, 'k' )
 # Make the axes the same as theirs
-#_ = plt.axis( [1, 1e8, 1e-4, 1e-1] )
+#_ = plt.axis( [1, 1e8, 1e-4, 1e2] )
 yearNames = [os.path.split( filename )[1][12:16] for filename in fileList]
 # We plotted two lines per year... double the year list
 #yearNames = [item for sublist in zip( yearNames, yearNames ) for item in sublist]
@@ -117,8 +115,6 @@ plt.show()
 
 # <codecell>
 
-%load_ext autoreload
-%autoreload 2
 # The variables we'll be computing
 averageShortestPathLengths = np.zeros( (10, 2009 - 1955) )
 clusteringCoefficients = np.zeros( (10, 2009 - 1955) )
@@ -126,7 +122,7 @@ randomizedAverageShortestPathLengths = np.zeros( (10, 2009 - 1955) )
 randomizedClusteringCoefficients = np.zeros( (10, 2009 - 1955) )
 # Load in pitch vectors for each year
 for n, year in enumerate( np.arange( 1955, 2009 ) ):
-    for seed in np.arange( 2 ):
+    for seed in np.arange( 10 ):
         with open( os.path.join( paths.graphmlPath, 'pitches-{}-{}.graphml'.format( year, seed ) ), 'r' ) as f:
             # Read in network
             G = loadGraph( f )
@@ -146,6 +142,17 @@ cbar.set_ticks( np.arange( 0, 2009-1955, 5 ) )
 cbar.set_ticklabels( 1955 + np.arange( 0, 2009-1955, 5 ) )
 plt.axis( [0.08, 0.72, 2.8, 3.5] )
 plt.show()
+
+# <codecell>
+
+with open( os.path.join( paths.graphmlPath, 'pitches-{}-{}.graphml'.format( year, seed ) ), 'r' ) as f:
+    # Read in network
+    g = loadGraph( f )
+print np.min( g.degree() ), np.max( g.degree() ), np.mean( g.degree() )
+removeTopNodes( g )
+print np.min( g.degree() ), np.max( g.degree() ), np.mean( g.degree() )
+g = randomizeNetwork( g )
+print np.min( g.degree() ), np.max( g.degree() ), np.mean( g.degree() )
 
 # <markdowncell>
 
