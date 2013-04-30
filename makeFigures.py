@@ -39,6 +39,8 @@ for n, filename in enumerate( fileList ):
     plotRankFrequency( rankFrequency*(10**n), colors[n] )
 # Get year names out of file names (kind of a hack but hey) and make them the legend
 yearNames = [os.path.split( filename )[1][12:16] for filename in fileList]
+plt.xlabel( 'Rank' )
+plt.ylabel( 'Relative frequency' )
 plt.legend( yearNames, loc='lower left' )
 plt.show()
     
@@ -53,6 +55,7 @@ plt.show()
 fileList = [os.path.join( paths.subsamplePath, 'msd-pitches-1965-0.npy' )]
 fileList += [os.path.join( paths.subsamplePath, 'msd-pitches-1985-0.npy' )]
 fileList += [os.path.join( paths.subsamplePath, 'msd-pitches-2005-0.npy' )]
+plt.figure( figsize=(8, 6) )
 for n, filename in enumerate( fileList ):
     pitchVectors = np.load( filename )
     rankFrequency, rankCounts, sortedMatrix = getRankFrequency( pitchVectors )
@@ -74,6 +77,8 @@ yearNames = [os.path.split( filename )[1][12:16] for filename in fileList]
 # We plotted two lines per year... double the year list
 #yearNames = [item for sublist in zip( yearNames, yearNames ) for item in sublist]
 plt.legend( yearNames, loc='lower left' )
+plt.xlabel( 'Frequency' )
+plt.ylabel( 'Probability' )
 plt.show()
 
 # <markdowncell>
@@ -86,6 +91,7 @@ plt.show()
 fileList = [os.path.join( paths.subsamplePath, 'msd-pitches-1965-0.npy' )]
 fileList += [os.path.join( paths.subsamplePath, 'msd-pitches-1985-0.npy' )]
 fileList += [os.path.join( paths.subsamplePath, 'msd-pitches-2005-0.npy' )]
+plt.figure( figsize=(8, 6) )
 for n, filename in enumerate( fileList ):
     pitchVectors = np.load( filename )
     rankFrequency, rankCounts, sortedMatrix = getRankFrequency( pitchVectors )
@@ -108,6 +114,8 @@ for n, filename in enumerate( fileList ):
 yearNames = [os.path.split( filename )[1][12:16] for filename in fileList]
 # We plotted two lines per year... double the year list
 #yearNames = [item for sublist in zip( yearNames, yearNames ) for item in sublist]
+plt.xlabel( 'Frequency' )
+plt.ylabel( 'Probability' )
 plt.legend( yearNames, loc='lower left' )
 plt.show()
 
@@ -122,6 +130,7 @@ averageShortestPathLengths = np.zeros( (10, 2009 - 1955) )
 clusteringCoefficients = np.zeros( (10, 2009 - 1955) )
 randomizedAverageShortestPathLengths = np.zeros( (10, 2009 - 1955) )
 randomizedClusteringCoefficients = np.zeros( (10, 2009 - 1955) )
+plt.figure( figsize=(8, 6) )
 # Load in pitch vectors for each year
 for n, year in enumerate( np.arange( 1955, 2009 ) ):
     for seed in np.arange( 10 ):
@@ -142,6 +151,8 @@ plt.scatter( randomizedClusteringCoefficients.flatten(), randomizedAverageShorte
 cbar = plt.colorbar()
 cbar.set_ticks( np.arange( 0, 2009-1955, 5 ) )
 cbar.set_ticklabels( 1955 + np.arange( 0, 2009-1955, 5 ) )
+plt.xlabel( 'Clustering Coefficient' )
+plt.ylabel( 'Average Shortest Path Length' )
 plt.axis( [0.08, 0.72, 2.8, 3.5] )
 plt.show()
 
@@ -156,6 +167,7 @@ averageShortestPathLengths = np.zeros( (10, 2009 - 1955) )
 clusteringCoefficients = np.zeros( (10, 2009 - 1955) )
 randomizedAverageShortestPathLengths = np.zeros( (10, 2009 - 1955) )
 randomizedClusteringCoefficients = np.zeros( (10, 2009 - 1955) )
+plt.figure( figsize=(8, 6) )
 # Load in pitch vectors for each year
 for n, year in enumerate( np.arange( 1955, 2009 ) ):
     for seed in np.arange( 10 ):
@@ -176,6 +188,8 @@ plt.scatter( randomizedClusteringCoefficients.flatten(), randomizedAverageShorte
 cbar = plt.colorbar()
 cbar.set_ticks( np.arange( 0, 2009-1955, 5 ) )
 cbar.set_ticklabels( 1955 + np.arange( 0, 2009-1955, 5 ) )
+plt.xlabel( 'Clustering Coefficient' )
+plt.ylabel( 'Average Shortest Path Length' )
 plt.axis( [0.08, 0.72, 2.8, 3.5] )
 plt.show()
 
@@ -190,6 +204,7 @@ averageShortestPathLengths = np.zeros( (10, 2009 - 1955) )
 clusteringCoefficients = np.zeros( (10, 2009 - 1955) )
 randomizedAverageShortestPathLengths = np.zeros( (10, 2009 - 1955) )
 randomizedClusteringCoefficients = np.zeros( (10, 2009 - 1955) )
+plt.figure( figsize=(8, 6) )
 # Load in pitch vectors for each year
 for n, year in enumerate( np.arange( 1955, 2009 ) ):
     for seed in np.arange( 10 ):
@@ -210,6 +225,8 @@ plt.scatter( randomizedClusteringCoefficients.flatten(), randomizedAverageShorte
 cbar = plt.colorbar()
 cbar.set_ticks( np.arange( 0, 2009-1955, 5 ) )
 cbar.set_ticklabels( 1955 + np.arange( 0, 2009-1955, 5 ) )
+plt.xlabel( 'Clustering Coefficient' )
+plt.ylabel( 'Average Shortest Path Length' )
 plt.axis( [0.08, 0.72, 2.8, 3.5] )
 plt.show()
 
@@ -232,6 +249,9 @@ ax.scatter( np.array( G.degree( G.vs ) ), np.array( G.strength( G.vs, weights='w
 plt.plot( np.arange( 3e3 ), 'k', linewidth=3 )
 # Set limits to match
 plt.axis( [1, 3e3, 1, 2e5] )
+plt.xlabel( 'Degree' )
+plt.ylabel( 'Strength' )
 ax.set_xscale('log')
 ax.set_yscale('log')
+plt.show()
 
