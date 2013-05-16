@@ -39,9 +39,13 @@ dataset they use in the paper (this will take a very very long time).  To do so
 you need to run
 
 python createDatasets.py 0
+
 python createDatasets.py 1
+
 python createDatasets.py 2
+
 ...
+
 python createDatasets.py 9
 
 This will save various .npy files into the path specified as subsamplePath in
