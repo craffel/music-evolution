@@ -10,7 +10,6 @@
 import test
 import paths
 from rankFrequency import *
-from distributions import *
 from networkAnalysis import *
 import matplotlib.pyplot as plt
 import numpy as np
